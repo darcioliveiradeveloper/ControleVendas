@@ -704,6 +704,63 @@ select:focus {
   }
 }
 
+/* ---- Cards / relatórios ---- */
+
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 14px;
+}
+
+.card {
+  background: var(--cartao);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.card-rotulo {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--texto-suave);
+  font-weight: 600;
+}
+
+.card-valor {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--texto);
+}
+
+.card-valor.lucro {
+  color: var(--sucesso);
+}
+
+.card-valor.gasto {
+  color: var(--erro);
+}
+
+.filtro-periodo {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.filtro-periodo .field {
+  flex: 1;
+  min-width: 160px;
+}
+
+.texto-suave {
+  color: var(--texto-suave);
+  font-size: 13px;
+}
+
 /* ---- Responsivo ---- */
 
 @media (max-width: 900px) {

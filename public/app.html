@@ -35,7 +35,7 @@
         <button class="nav-item" data-tela="vendas">
           <span class="nav-icon">&#128176;</span> Vendas
         </button>
-        <button class="nav-item disabled" title="Disponível na próxima etapa">
+        <button class="nav-item" data-tela="relatorios">
           <span class="nav-icon">&#128202;</span> Relatórios
         </button>
       </nav>
@@ -54,9 +54,52 @@
 
       <main class="content">
         <section id="tela-dashboard" class="tela">
+          <div class="cards-grid">
+            <div class="card">
+              <div class="card-rotulo">Vendas</div>
+              <div class="card-valor" id="d-vendas">0</div>
+            </div>
+            <div class="card">
+              <div class="card-rotulo">Receita total</div>
+              <div class="card-valor" id="d-receita">R$ 0,00</div>
+            </div>
+            <div class="card">
+              <div class="card-rotulo">Lucro</div>
+              <div class="card-valor lucro" id="d-lucro">R$ 0,00</div>
+            </div>
+            <div class="card">
+              <div class="card-rotulo">Gastos (compras)</div>
+              <div class="card-valor gasto" id="d-gastos">R$ 0,00</div>
+            </div>
+            <div class="card">
+              <div class="card-rotulo">Encomendas abertas</div>
+              <div class="card-valor" id="d-encomendas">0</div>
+            </div>
+            <div class="card">
+              <div class="card-rotulo">Parcelas em aberto</div>
+              <div class="card-valor" id="d-parcelas">0</div>
+            </div>
+          </div>
+
           <div class="panel">
-            <h2>Bem-vindo(a)!</h2>
-            <p>Este é o seu painel. Na próxima etapa será criado o cadastro de produtos.</p>
+            <div class="panel-head">
+              <h2>Parcelas em aberto</h2>
+              <span class="texto-suave" id="d-resumo-parcelas"></span>
+            </div>
+            <div class="table-wrapper">
+              <table class="tabela">
+                <thead>
+                  <tr>
+                    <th>Vencimento</th>
+                    <th>Cliente</th>
+                    <th>Parcela</th>
+                    <th>Valor</th>
+                    <th>Situação</th>
+                  </tr>
+                </thead>
+                <tbody id="corpo-parcelas-dash"></tbody>
+              </table>
+            </div>
           </div>
         </section>
 
@@ -331,6 +374,106 @@
             </div>
           </div>
         </section>
+
+        <section id="tela-relatorios" class="tela hidden">
+          <div class="panel">
+            <h2>Período</h2>
+            <div class="filtro-periodo">
+              <div class="field">
+                <label for="r-inicio">De</label>
+                <input id="r-inicio" type="date" />
+              </div>
+              <div class="field">
+                <label for="r-fim">Até</label>
+                <input id="r-fim" type="date" />
+              </div>
+              <button id="btn-aplicar-periodo" class="btn primary">Aplicar</button>
+            </div>
+          </div>
+
+          <div class="cards-grid">
+            <div class="card">
+              <div class="card-rotulo">Vendas no período</div>
+              <div class="card-valor" id="r-vendas">0</div>
+            </div>
+            <div class="card">
+              <div class="card-rotulo">Receita</div>
+              <div class="card-valor" id="r-receita">R$ 0,00</div>
+            </div>
+            <div class="card">
+              <div class="card-rotulo">Lucro</div>
+              <div class="card-valor lucro" id="r-lucro">R$ 0,00</div>
+            </div>
+            <div class="card">
+              <div class="card-rotulo">Gastos</div>
+              <div class="card-valor gasto" id="r-gastos">R$ 0,00</div>
+            </div>
+            <div class="card">
+              <div class="card-rotulo">Parcelas vencidas</div>
+              <div class="card-valor gasto" id="r-vencidas">0</div>
+            </div>
+            <div class="card">
+              <div class="card-rotulo">Clientes / Produtos</div>
+              <div class="card-valor" id="r-cadastros">0 / 0</div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head"><h2>Vendas no período</h2></div>
+            <div class="table-wrapper">
+              <table class="tabela">
+                <thead>
+                  <tr>
+                    <th>Data</th>
+                    <th>Cliente</th>
+                    <th>Tipo</th>
+                    <th>Itens</th>
+                    <th>Total</th>
+                    <th>Lucro</th>
+                  </tr>
+                </thead>
+                <tbody id="corpo-vendas-rel"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head"><h2>Parcelas em aberto</h2></div>
+            <div class="table-wrapper">
+              <table class="tabela">
+                <thead>
+                  <tr>
+                    <th>Vencimento</th>
+                    <th>Cliente</th>
+                    <th>Parcela</th>
+                    <th>Valor</th>
+                    <th>Situação</th>
+                  </tr>
+                </thead>
+                <tbody id="corpo-parcelas-rel"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head"><h2>Gastos no período (compras de estoque)</h2></div>
+            <div class="table-wrapper">
+              <table class="tabela">
+                <thead>
+                  <tr>
+                    <th>Data</th>
+                    <th>Produto</th>
+                    <th>Qtd.</th>
+                    <th>Custo unit.</th>
+                    <th>Total</th>
+                    <th>Obs.</th>
+                  </tr>
+                </thead>
+                <tbody id="corpo-gastos-rel"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
       </main>
     </div>
   </div>
@@ -350,5 +493,6 @@
   <script src="js/estoque.js"></script>
   <script src="js/clientes.js"></script>
   <script src="js/vendas.js"></script>
+  <script src="js/relatorios.js"></script>
 </body>
 </html>
