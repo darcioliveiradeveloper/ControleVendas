@@ -7,7 +7,7 @@ let removerFotoNaEdicao = false;
 
 // ---- Navegação ---------------------------------------------------------
 
-const titulos = { dashboard: 'Dashboard', produtos: 'Produtos', estoque: 'Estoque' };
+const titulos = { dashboard: 'Dashboard', produtos: 'Produtos', estoque: 'Estoque', clientes: 'Clientes' };
 
 document.querySelectorAll('.nav-item[data-tela]').forEach((botao) => {
   botao.addEventListener('click', () => {

@@ -29,7 +29,7 @@
         <button class="nav-item" data-tela="estoque">
           <span class="nav-icon">&#128179;</span> Estoque
         </button>
-        <button class="nav-item disabled" title="Disponível na próxima etapa">
+        <button class="nav-item" data-tela="clientes">
           <span class="nav-icon">&#128101;</span> Clientes
         </button>
         <button class="nav-item disabled" title="Disponível na próxima etapa">
@@ -176,6 +176,53 @@
             </div>
           </div>
         </section>
+
+        <section id="tela-clientes" class="tela hidden">
+          <div class="panel">
+            <h2>Cadastrar cliente</h2>
+            <form id="form-cliente">
+              <div class="form-grid">
+                <div class="field">
+                  <label for="c-nome">Nome</label>
+                  <input id="c-nome" type="text" placeholder="Nome do cliente" required />
+                </div>
+                <div class="field">
+                  <label for="c-telefone">Telefone</label>
+                  <input id="c-telefone" type="tel" placeholder="(11) 99999-9999" />
+                </div>
+                <div class="field" style="grid-column: 1 / -1;">
+                  <label for="c-endereco">Endereço</label>
+                  <input id="c-endereco" type="text" placeholder="Rua, número, bairro, cidade" />
+                </div>
+              </div>
+              <div class="form-actions">
+                <button type="submit" id="btn-salvar-cliente" class="btn primary">Salvar cliente</button>
+                <button type="button" id="btn-cancelar-cliente" class="btn secondary hidden">Cancelar edição</button>
+              </div>
+              <div id="msg-cliente" class="mensagem hidden"></div>
+            </form>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head">
+              <h2>Clientes cadastrados</h2>
+              <input id="busca-clientes" type="search" placeholder="Buscar cliente..." />
+            </div>
+            <div class="table-wrapper">
+              <table class="tabela">
+                <thead>
+                  <tr>
+                    <th>Nome</th>
+                    <th>Telefone</th>
+                    <th>Endereço</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="corpo-clientes"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
       </main>
     </div>
   </div>
@@ -183,5 +230,6 @@
   <script src="js/api.js"></script>
   <script src="js/produtos.js"></script>
   <script src="js/estoque.js"></script>
+  <script src="js/clientes.js"></script>
 </body>
 </html>

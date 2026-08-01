@@ -38,6 +38,15 @@ function migrar() {
       criado_em TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
       FOREIGN KEY (produto_id) REFERENCES produtos(id) ON DELETE CASCADE
     );
+
+    CREATE TABLE IF NOT EXISTS clientes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      nome TEXT NOT NULL,
+      endereco TEXT,
+      telefone TEXT,
+      criado_em TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+      atualizado_em TEXT
+    );
   `);
 }
 
