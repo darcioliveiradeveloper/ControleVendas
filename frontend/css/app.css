@@ -38,6 +38,10 @@ body {
   min-height: 100vh;
 }
 
+.hidden {
+  display: none !important;
+}
+
 .overlay {
   position: fixed;
   inset: 0;
