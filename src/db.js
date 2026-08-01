@@ -27,6 +27,17 @@ function migrar() {
       criado_em TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
       atualizado_em TEXT
     );
+
+    CREATE TABLE IF NOT EXISTS movimentos_estoque (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      produto_id INTEGER NOT NULL,
+      tipo TEXT NOT NULL CHECK (tipo IN ('entrada', 'saida')),
+      quantidade INTEGER NOT NULL,
+      custo_unitario REAL,
+      observacao TEXT,
+      criado_em TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+      FOREIGN KEY (produto_id) REFERENCES produtos(id) ON DELETE CASCADE
+    );
   `);
 }
 

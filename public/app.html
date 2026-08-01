@@ -26,7 +26,7 @@
         <button class="nav-item" data-tela="produtos">
           <span class="nav-icon">&#128230;</span> Produtos
         </button>
-        <button class="nav-item disabled" title="Disponível na próxima etapa">
+        <button class="nav-item" data-tela="estoque">
           <span class="nav-icon">&#128179;</span> Estoque
         </button>
         <button class="nav-item disabled" title="Disponível na próxima etapa">
@@ -113,11 +113,75 @@
             <div id="lista-produtos" class="produtos-grid"></div>
           </div>
         </section>
+
+        <section id="tela-estoque" class="tela hidden">
+          <div class="panel">
+            <h2>Registrar movimento de estoque</h2>
+            <form id="form-movimento">
+              <div class="form-grid">
+                <div class="field">
+                  <label for="m-produto">Produto</label>
+                  <select id="m-produto" required>
+                    <option value="">Selecione...</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="m-tipo">Tipo de movimento</label>
+                  <select id="m-tipo" required>
+                    <option value="entrada">Entrada (compra)</option>
+                    <option value="saida">Saída (perda/uso)</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="m-quantidade">Quantidade</label>
+                  <input id="m-quantidade" type="number" step="1" min="1" placeholder="1" required />
+                </div>
+                <div class="field" id="campo-custo">
+                  <label for="m-custo">Custo unitário (R$)</label>
+                  <input id="m-custo" type="number" step="0.01" min="0" placeholder="0,00" />
+                  <span class="help" id="ajuda-custo"></span>
+                </div>
+                <div class="field">
+                  <label for="m-observacao">Observação</label>
+                  <input id="m-observacao" type="text" placeholder="Ex.: compra fornecedor, quebra" />
+                </div>
+              </div>
+              <div class="form-actions">
+                <button type="submit" id="btn-movimento" class="btn primary">Registrar movimento</button>
+              </div>
+              <div id="msg-estoque" class="mensagem hidden"></div>
+            </form>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head">
+              <h2>Histórico de movimentações</h2>
+              <input id="filtro-movimento" type="search" placeholder="Filtrar produto..." />
+            </div>
+            <div class="table-wrapper">
+              <table class="tabela">
+                <thead>
+                  <tr>
+                    <th>Data</th>
+                    <th>Produto</th>
+                    <th>Tipo</th>
+                    <th>Qtd.</th>
+                    <th>Custo unit.</th>
+                    <th>Obs.</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="corpo-movimentos"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
       </main>
     </div>
   </div>
 
   <script src="js/api.js"></script>
   <script src="js/produtos.js"></script>
+  <script src="js/estoque.js"></script>
 </body>
 </html>

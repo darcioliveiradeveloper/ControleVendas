@@ -4,6 +4,7 @@ const path = require('path');
 const autenticar = require('./src/middleware/auth');
 const authRoutes = require('./src/routes/auth.routes');
 const produtosRoutes = require('./src/routes/produtos.routes');
+const estoqueRoutes = require('./src/routes/estoque.routes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -13,6 +14,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/produtos', produtosRoutes);
+app.use('/api/estoque', estoqueRoutes);
 
 app.get('/api/me', autenticar, (req, res) => {
   res.json({ usuario: req.usuario });

@@ -376,6 +376,96 @@ input[readonly] {
   font-size: 14px;
 }
 
+/* ---- Selects e ajudas ---- */
+
+select {
+  padding: 11px 12px;
+  border: 1px solid var(--borda);
+  border-radius: 10px;
+  font-size: 15px;
+  color: var(--texto);
+  background: #f8fafc;
+  width: 100%;
+}
+
+select:focus {
+  outline: none;
+  border-color: var(--primaria);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+  background: #fff;
+}
+
+.help {
+  font-size: 12px;
+  color: var(--texto-suave);
+  line-height: 1.4;
+}
+
+/* ---- Tabela ---- */
+
+.table-wrapper {
+  overflow-x: auto;
+}
+
+.tabela {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  min-width: 640px;
+}
+
+.tabela th,
+.tabela td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--borda);
+  white-space: nowrap;
+}
+
+.tabela th {
+  background: var(--fundo);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--texto-suave);
+}
+
+.tabela tr:hover td {
+  background: #fafbff;
+}
+
+.tabela td.data {
+  color: var(--texto-suave);
+  font-size: 13px;
+}
+
+.tabela td.acoes {
+  text-align: right;
+}
+
+.badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.badge.entrada {
+  background: #dcfce7;
+  color: var(--sucesso);
+}
+
+.badge.saida {
+  background: #fee2e2;
+  color: var(--erro);
+}
+
+.small-btn {
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
 /* ---- Responsivo ---- */
 
 @media (max-width: 900px) {
