@@ -7,7 +7,7 @@ const autenticar = require('../middleware/auth');
 
 const router = express.Router();
 
-const PASTA_UPLOADS = path.join(__dirname, '..', '..', 'public', 'uploads');
+const PASTA_UPLOADS = path.join(__dirname, '..', '..', 'uploads');
 fs.mkdirSync(PASTA_UPLOADS, { recursive: true });
 
 const storage = multer.diskStorage({
