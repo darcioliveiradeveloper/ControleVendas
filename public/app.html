@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Controle de Vendas</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/app.css" />
+</head>
+<body>
+  <div class="app">
+    <div id="overlay" class="overlay hidden"></div>
+
+    <aside id="sidebar" class="sidebar">
+      <div class="sidebar-logo">
+        <div class="logo">
+          <span class="logo-icon">V</span>
+        </div>
+        <h2>Controle de Vendas</h2>
+      </div>
+
+      <nav class="nav">
+        <button class="nav-item active" data-tela="dashboard">
+          <span class="nav-icon">&#128200;</span> Dashboard
+        </button>
+        <button class="nav-item" data-tela="produtos">
+          <span class="nav-icon">&#128230;</span> Produtos
+        </button>
+        <button class="nav-item disabled" title="Disponível na próxima etapa">
+          <span class="nav-icon">&#128179;</span> Estoque
+        </button>
+        <button class="nav-item disabled" title="Disponível na próxima etapa">
+          <span class="nav-icon">&#128101;</span> Clientes
+        </button>
+        <button class="nav-item disabled" title="Disponível na próxima etapa">
+          <span class="nav-icon">&#128176;</span> Vendas
+        </button>
+        <button class="nav-item disabled" title="Disponível na próxima etapa">
+          <span class="nav-icon">&#128202;</span> Relatórios
+        </button>
+      </nav>
+
+      <div class="sidebar-user">
+        <span id="nome-usuario">Usuário</span>
+        <button id="btn-sair" class="btn secondary small">Sair</button>
+      </div>
+    </aside>
+
+    <div class="main">
+      <header class="topbar">
+        <button id="btn-menu" class="icon-btn" aria-label="Menu">&#9776;</button>
+        <h1 id="titulo-tela">Dashboard</h1>
+      </header>
+
+      <main class="content">
+        <section id="tela-dashboard" class="tela">
+          <div class="panel">
+            <h2>Bem-vindo(a)!</h2>
+            <p>Este é o seu painel. Na próxima etapa será criado o cadastro de produtos.</p>
+          </div>
+        </section>
+
+        <section id="tela-produtos" class="tela hidden">
+          <div class="panel">
+            <h2>Cadastrar produto</h2>
+            <form id="form-produto" enctype="multipart/form-data">
+              <div class="form-grid">
+                <div class="field campo-foto">
+                  <label>Foto do produto</label>
+                  <div id="preview-foto" class="preview-foto">
+                    <span>Sem foto</span>
+                  </div>
+                  <input id="p-foto" type="file" accept="image/*" />
+                </div>
+                <div class="field">
+                  <label for="p-nome">Nome</label>
+                  <input id="p-nome" type="text" placeholder="Ex.: Camiseta básica" required />
+                </div>
+                <div class="field">
+                  <label for="p-descricao">Descrição</label>
+                  <textarea id="p-descricao" rows="3" placeholder="Descrição do produto"></textarea>
+                </div>
+                <div class="field">
+                  <label for="p-custo">Preço de custo (R$)</label>
+                  <input id="p-custo" type="number" step="0.01" min="0" placeholder="0,00" />
+                </div>
+                <div class="field">
+                  <label for="p-margem">Margem de lucro (%)</label>
+                  <input id="p-margem" type="number" step="0.01" min="0" placeholder="Ex.: 50" />
+                </div>
+                <div class="field">
+                  <label for="p-venda">Preço de venda (R$)</label>
+                  <input id="p-venda" type="text" readonly placeholder="Calculado automaticamente" />
+                </div>
+                <div class="field">
+                  <label for="p-estoque">Estoque inicial</label>
+                  <input id="p-estoque" type="number" step="1" min="0" placeholder="0" />
+                </div>
+              </div>
+              <div class="form-actions">
+                <button type="submit" id="btn-salvar" class="btn primary">Salvar produto</button>
+                <button type="button" id="btn-cancelar" class="btn secondary hidden">Cancelar edição</button>
+              </div>
+              <div id="msg-produto" class="mensagem hidden"></div>
+            </form>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head">
+              <h2>Produtos cadastrados</h2>
+              <input id="busca-produtos" type="search" placeholder="Buscar produto..." />
+            </div>
+            <div id="lista-produtos" class="produtos-grid"></div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/produtos.js"></script>
+</body>
+</html>

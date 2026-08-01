@@ -1,6 +1,4 @@
-﻿const API = '/api';
-
-const $ = (id) => document.getElementById(id);
+﻿const $ = (id) => document.getElementById(id);
 const mensagem = $('mensagem');
 
 function mostrarMensagem(texto, tipo) {
@@ -16,22 +14,6 @@ function esconderMensagem() {
 function setCarregando(botao, carregando, textoNormal) {
   botao.disabled = carregando;
   botao.textContent = carregando ? 'Aguarde...' : textoNormal;
-}
-
-async function requisicaoJSON(url, metodo, corpo, token) {
-  const opcoes = {
-    method: metodo,
-    headers: { 'Content-Type': 'application/json' },
-  };
-  if (corpo) opcoes.body = JSON.stringify(corpo);
-  if (token) opcoes.headers['Authorization'] = 'Bearer ' + token;
-
-  const resposta = await fetch(url, opcoes);
-  const dados = await resposta.json().catch(() => ({}));
-  if (!resposta.ok) {
-    throw new Error(dados.erro || 'Erro na requisição.');
-  }
-  return dados;
 }
 
 // ---- Abas -------------------------------------------------------------
@@ -61,8 +43,9 @@ $('form-login').addEventListener('submit', async (evento) => {
       email: $('login-email').value,
       senha: $('login-senha').value,
     });
-    salvarSessao(dados.token, dados.usuario);
-    await entrarNoSistema();
+    localStorage.setItem('token', dados.token);
+    localStorage.setItem('usuario', JSON.stringify(dados.usuario));
+    window.location.href = '/app.html';
   } catch (erro) {
     mostrarMensagem(erro.message, 'erro');
   } finally {
@@ -95,54 +78,11 @@ $('form-cadastro').addEventListener('submit', async (evento) => {
   }
 });
 
-// ---- Sessao -----------------------------------------------------------
-
-function salvarSessao(token, usuario) {
-  localStorage.setItem('token', token);
-  localStorage.setItem('usuario', JSON.stringify(usuario));
-}
-
-function obterSessao() {
-  const token = localStorage.getItem('token');
-  const usuario = JSON.parse(localStorage.getItem('usuario') || 'null');
-  return { token, usuario };
-}
-
-function sair() {
-  localStorage.removeItem('token');
-  localStorage.removeItem('usuario');
-  window.location.reload();
-}
-
-async function entrarNoSistema() {
-  const { token } = obterSessao();
-  try {
-    const dados = await requisicaoJSON(`${API}/me`, 'GET', null, token);
-    const nome = dados.usuario.nome || dados.usuario.email;
-    mensagem.className = 'mensagem sucesso';
-    mensagem.innerHTML =
-      'Login validado com sucesso!<br><strong>' +
-      escapar(nome) +
-      '</strong>, o sistema está funcionando.<br><br><button class="btn primary" onclick="sair()">Sair</button>';
-    mensagem.classList.remove('hidden');
-  } catch (erro) {
-    mostrarMensagem(erro.message, 'erro');
-    sair();
-  }
-}
-
-function escapar(texto) {
-  const div = document.createElement('div');
-  div.textContent = texto;
-  return div.innerHTML;
-}
-
 // ---- Inicializacao ----------------------------------------------------
 
 (async function iniciar() {
-  const { token } = obterSessao();
+  const token = obterToken();
   if (token) {
-    mudarAba('login');
-    await entrarNoSistema();
+    window.location.href = '/app.html';
   }
 })();
