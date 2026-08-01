@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: controle-vendas-api
+    runtime: node
+    rootDir: backend
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: JWT_SECRET
+        generateValue: true
+      - key: TURSO_URL
+        sync: false
+      - key: TURSO_TOKEN
+        sync: false

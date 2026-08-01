@@ -1,11 +1,12 @@
 {
   "name": "controle-vendas",
   "version": "1.0.0",
-  "description": "Sistema de controle de vendas - Etapa 1 (autenticacao)",
+  "description": "Sistema de controle de vendas - API (backend)",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "migrar:turso": "node src/migrar-turso.js"
   },
   "keywords": [
     "vendas",
@@ -15,6 +16,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@libsql/client": "^0.17.4",
     "bcryptjs": "^3.0.3",
     "better-sqlite3": "^13.0.2",
     "cors": "^2.8.6",

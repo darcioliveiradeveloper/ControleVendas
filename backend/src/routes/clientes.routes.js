@@ -1,5 +1,5 @@
 const express = require('express');
-const db = require('../db');
+const { db } = require('../db');
 const autenticar = require('../middleware/auth');
 
 const router = express.Router();
@@ -17,52 +17,52 @@ function normalizarCliente(linha) {
   };
 }
 
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   const { nome, endereco, telefone } = req.body || {};
 
   if (!nome || !String(nome).trim()) {
     return res.status(400).json({ erro: 'O nome do cliente é obrigatório.' });
   }
 
-  const resultado = db
-    .prepare('INSERT INTO clientes (nome, endereco, telefone) VALUES (?, ?, ?)')
-    .run(
-      String(nome).trim(),
-      endereco ? String(endereco).trim() : null,
-      telefone ? String(telefone).trim() : null
-    );
+  const resultado = await db.run(
+    'INSERT INTO clientes (nome, endereco, telefone) VALUES (?, ?, ?)',
+    String(nome).trim(),
+    endereco ? String(endereco).trim() : null,
+    telefone ? String(telefone).trim() : null
+  );
 
-  const cliente = db.prepare('SELECT * FROM clientes WHERE id = ?').get(resultado.lastInsertRowid);
+  const cliente = await db.get('SELECT * FROM clientes WHERE id = ?', resultado.lastInsertRowid);
   return res.status(201).json(normalizarCliente(cliente));
 });
 
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   const { busca } = req.query;
   let linhas;
   if (busca) {
-    linhas = db
-      .prepare(
-        `SELECT * FROM clientes
-         WHERE nome LIKE ? OR telefone LIKE ? OR endereco LIKE ?
-         ORDER BY nome`
-      )
-      .all(`%${busca}%`, `%${busca}%`, `%${busca}%`);
+    linhas = await db.all(
+      `SELECT * FROM clientes
+       WHERE nome LIKE ? OR telefone LIKE ? OR endereco LIKE ?
+       ORDER BY nome`,
+      `%${busca}%`,
+      `%${busca}%`,
+      `%${busca}%`
+    );
   } else {
-    linhas = db.prepare('SELECT * FROM clientes ORDER BY nome').all();
+    linhas = await db.all('SELECT * FROM clientes ORDER BY nome');
   }
   return res.json(linhas.map(normalizarCliente));
 });
 
-router.get('/:id', (req, res) => {
-  const cliente = db.prepare('SELECT * FROM clientes WHERE id = ?').get(req.params.id);
+router.get('/:id', async (req, res) => {
+  const cliente = await db.get('SELECT * FROM clientes WHERE id = ?', req.params.id);
   if (!cliente) {
     return res.status(404).json({ erro: 'Cliente não encontrado.' });
   }
   return res.json(normalizarCliente(cliente));
 });
 
-router.put('/:id', (req, res) => {
-  const cliente = db.prepare('SELECT * FROM clientes WHERE id = ?').get(req.params.id);
+router.put('/:id', async (req, res) => {
+  const cliente = await db.get('SELECT * FROM clientes WHERE id = ?', req.params.id);
   if (!cliente) {
     return res.status(404).json({ erro: 'Cliente não encontrado.' });
   }
@@ -74,27 +74,26 @@ router.put('/:id', (req, res) => {
     return res.status(400).json({ erro: 'O nome do cliente é obrigatório.' });
   }
 
-  db.prepare(
+  await db.run(
     `UPDATE clientes
      SET nome = ?, endereco = ?, telefone = ?, atualizado_em = datetime('now', 'localtime')
-     WHERE id = ?`
-  ).run(
+     WHERE id = ?`,
     novoNome,
     endereco !== undefined ? String(endereco).trim() || null : cliente.endereco,
     telefone !== undefined ? String(telefone).trim() || null : cliente.telefone,
     cliente.id
   );
 
-  const atualizado = db.prepare('SELECT * FROM clientes WHERE id = ?').get(cliente.id);
+  const atualizado = await db.get('SELECT * FROM clientes WHERE id = ?', cliente.id);
   return res.json(normalizarCliente(atualizado));
 });
 
-router.delete('/:id', (req, res) => {
-  const cliente = db.prepare('SELECT * FROM clientes WHERE id = ?').get(req.params.id);
+router.delete('/:id', async (req, res) => {
+  const cliente = await db.get('SELECT * FROM clientes WHERE id = ?', req.params.id);
   if (!cliente) {
     return res.status(404).json({ erro: 'Cliente não encontrado.' });
   }
-  db.prepare('DELETE FROM clientes WHERE id = ?').run(cliente.id);
+  await db.run('DELETE FROM clientes WHERE id = ?', cliente.id);
   return res.status(204).send();
 });
 

@@ -1,5 +1,5 @@
 const express = require('express');
-const db = require('../db');
+const { db } = require('../db');
 const autenticar = require('../middleware/auth');
 
 const router = express.Router();
@@ -19,29 +19,28 @@ function addMeses(data, meses) {
   return `${a}-${m}-${dd}`;
 }
 
-function getVendaDetalhe(id) {
-  const venda = db
-    .prepare(
-      `SELECT v.*, c.nome AS cliente_nome
-       FROM vendas v
-       LEFT JOIN clientes c ON c.id = v.cliente_id
-       WHERE v.id = ?`
-    )
-    .get(id);
+async function getVendaDetalhe(id) {
+  const venda = await db.get(
+    `SELECT v.*, c.nome AS cliente_nome
+     FROM vendas v
+     LEFT JOIN clientes c ON c.id = v.cliente_id
+     WHERE v.id = ?`,
+    id
+  );
   if (!venda) return null;
 
-  venda.itens = db
-    .prepare(
-      `SELECT i.*, p.nome AS produto_nome
-       FROM venda_itens i
-       JOIN produtos p ON p.id = i.produto_id
-       WHERE i.venda_id = ?`
-    )
-    .all(id);
+  venda.itens = await db.all(
+    `SELECT i.*, p.nome AS produto_nome
+     FROM venda_itens i
+     JOIN produtos p ON p.id = i.produto_id
+     WHERE i.venda_id = ?`,
+    id
+  );
 
-  venda.parcelas = db
-    .prepare('SELECT * FROM parcelas WHERE venda_id = ? ORDER BY numero')
-    .all(id);
+  venda.parcelas = await db.all(
+    'SELECT * FROM parcelas WHERE venda_id = ? ORDER BY numero',
+    id
+  );
 
   const pagas = venda.parcelas.filter((p) => p.pago);
   venda.parcelas_pagas = pagas.length;
@@ -51,7 +50,7 @@ function getVendaDetalhe(id) {
   return venda;
 }
 
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   const { cliente_id, tipo, forma_pagamento, numero_parcelas, data_primeira_parcela, pago, itens } = req.body || {};
 
   if (!itens || !Array.isArray(itens) || itens.length === 0) {
@@ -67,7 +66,7 @@ router.post('/', (req, res) => {
     if (!qtd || qtd <= 0) {
       return res.status(400).json({ erro: 'Quantidade inválida em um dos produtos.' });
     }
-    const produto = db.prepare('SELECT * FROM produtos WHERE id = ?').get(item.produto_id);
+    const produto = await db.get('SELECT * FROM produtos WHERE id = ?', item.produto_id);
     if (!produto) {
       return res.status(400).json({ erro: 'Um dos produtos não foi encontrado.' });
     }
@@ -102,41 +101,57 @@ router.post('/', (req, res) => {
     }
   }
 
-  const transacao = db.transaction(() => {
-    const resultado = db
-      .prepare('INSERT INTO vendas (cliente_id, tipo, forma_pagamento, total) VALUES (?, ?, ?, ?)')
-      .run(cliente_id || null, tipoVenda, forma, total);
-    const vendaId = resultado.lastInsertRowid;
-
-    for (const item of itensCarregados) {
-      db.prepare(
-        'INSERT INTO venda_itens (venda_id, produto_id, quantidade, preco_unitario, custo_unitario) VALUES (?, ?, ?, ?, ?)'
-      ).run(vendaId, item.id, item.quantidade, item.preco_venda, item.preco_custo);
-
-      if (tipoVenda === 'venda') {
-        db.prepare('UPDATE produtos SET estoque = estoque - ?, atualizado_em = datetime(\'now\', \'localtime\') WHERE id = ?')
-          .run(item.quantidade, item.id);
-      }
-    }
-
-    for (const p of listaParcelas) {
-      db.prepare(
-        'INSERT INTO parcelas (venda_id, numero, valor, data_vencimento, pago, data_pagamento) VALUES (?, ?, ?, ?, ?, ?)'
-      ).run(vendaId, p.numero, p.valor, p.data_vencimento, p.pago, p.pago ? hoje() : null);
-    }
-
-    return vendaId;
-  });
-
   try {
-    const vendaId = transacao();
-    return res.status(201).json(getVendaDetalhe(vendaId));
+    const vendaId = await db.transacao(async (tx) => {
+      const resultado = await tx.run(
+        'INSERT INTO vendas (cliente_id, tipo, forma_pagamento, total) VALUES (?, ?, ?, ?)',
+        cliente_id || null,
+        tipoVenda,
+        forma,
+        total
+      );
+      const idVenda = resultado.lastInsertRowid;
+
+      for (const item of itensCarregados) {
+        await tx.run(
+          'INSERT INTO venda_itens (venda_id, produto_id, quantidade, preco_unitario, custo_unitario) VALUES (?, ?, ?, ?, ?)',
+          idVenda,
+          item.id,
+          item.quantidade,
+          item.preco_venda,
+          item.preco_custo
+        );
+
+        if (tipoVenda === 'venda') {
+          await tx.run(
+            "UPDATE produtos SET estoque = estoque - ?, atualizado_em = datetime('now', 'localtime') WHERE id = ?",
+            item.quantidade,
+            item.id
+          );
+        }
+      }
+
+      for (const p of listaParcelas) {
+        await tx.run(
+          'INSERT INTO parcelas (venda_id, numero, valor, data_vencimento, pago, data_pagamento) VALUES (?, ?, ?, ?, ?, ?)',
+          idVenda,
+          p.numero,
+          p.valor,
+          p.data_vencimento,
+          p.pago,
+          p.pago ? hoje() : null
+        );
+      }
+
+      return idVenda;
+    });
+    return res.status(201).json(await getVendaDetalhe(vendaId));
   } catch (erro) {
     return res.status(500).json({ erro: 'Erro ao registrar a venda.' });
   }
 });
 
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   const { tipo, status, busca } = req.query;
 
   let sql = `
@@ -158,44 +173,42 @@ router.get('/', (req, res) => {
   if (cond.length) sql += ' WHERE ' + cond.join(' AND ');
 
   sql += ' ORDER BY v.id DESC LIMIT 100';
-  return res.json(db.prepare(sql).all(...params));
+  return res.json(await db.all(sql, ...params));
 });
 
-router.get('/:id', (req, res) => {
-  const venda = getVendaDetalhe(req.params.id);
+router.get('/:id', async (req, res) => {
+  const venda = await getVendaDetalhe(req.params.id);
   if (!venda) {
     return res.status(404).json({ erro: 'Venda não encontrada.' });
   }
   return res.json(venda);
 });
 
-router.put('/:id/parcelas/:parcelaId', (req, res) => {
-  const venda = db.prepare('SELECT * FROM vendas WHERE id = ?').get(req.params.id);
+router.put('/:id/parcelas/:parcelaId', async (req, res) => {
+  const venda = await db.get('SELECT * FROM vendas WHERE id = ?', req.params.id);
   if (!venda) {
     return res.status(404).json({ erro: 'Venda não encontrada.' });
   }
   if (venda.status === 'cancelada') {
     return res.status(400).json({ erro: 'Não é possível alterar parcelas de uma venda cancelada.' });
   }
-  const parcela = db
-    .prepare('SELECT * FROM parcelas WHERE id = ? AND venda_id = ?')
-    .get(req.params.parcelaId, venda.id);
+  const parcela = await db.get('SELECT * FROM parcelas WHERE id = ? AND venda_id = ?', req.params.parcelaId, venda.id);
   if (!parcela) {
     return res.status(404).json({ erro: 'Parcela não encontrada.' });
   }
 
   const { pago } = req.body || {};
-  db.prepare('UPDATE parcelas SET pago = ?, data_pagamento = ? WHERE id = ?').run(
+  await db.run('UPDATE parcelas SET pago = ?, data_pagamento = ? WHERE id = ?',
     pago ? 1 : 0,
     pago ? hoje() : null,
     parcela.id
   );
 
-  return res.json(getVendaDetalhe(venda.id));
+  return res.json(await getVendaDetalhe(venda.id));
 });
 
-router.post('/:id/confirmar', (req, res) => {
-  const venda = db.prepare('SELECT * FROM vendas WHERE id = ?').get(req.params.id);
+router.post('/:id/confirmar', async (req, res) => {
+  const venda = await db.get('SELECT * FROM vendas WHERE id = ?', req.params.id);
   if (!venda) {
     return res.status(404).json({ erro: 'Venda não encontrada.' });
   }
@@ -206,10 +219,10 @@ router.post('/:id/confirmar', (req, res) => {
     return res.status(400).json({ erro: 'Esta venda não é uma encomenda.' });
   }
 
-  const itens = db.prepare('SELECT * FROM venda_itens WHERE venda_id = ?').all(venda.id);
+  const itens = await db.all('SELECT * FROM venda_itens WHERE venda_id = ?', venda.id);
   const faltando = [];
   for (const item of itens) {
-    const produto = db.prepare('SELECT * FROM produtos WHERE id = ?').get(item.produto_id);
+    const produto = await db.get('SELECT * FROM produtos WHERE id = ?', item.produto_id);
     if (!produto || produto.estoque < item.quantidade) {
       faltando.push(`${produto ? produto.nome : 'Produto removido'} (disponível: ${produto ? produto.estoque : 0})`);
     }
@@ -218,23 +231,21 @@ router.post('/:id/confirmar', (req, res) => {
     return res.status(400).json({ erro: `Estoque insuficiente para confirmar a encomenda: ${faltando.join(', ')}.` });
   }
 
-  const transacao = db.transaction(() => {
-    for (const item of itens) {
-      db.prepare('UPDATE produtos SET estoque = estoque - ? WHERE id = ?').run(item.quantidade, item.produto_id);
-    }
-    db.prepare('UPDATE vendas SET tipo = \'venda\' WHERE id = ?').run(venda.id);
-  });
-
   try {
-    transacao();
-    return res.json(getVendaDetalhe(venda.id));
+    await db.transacao(async (tx) => {
+      for (const item of itens) {
+        await tx.run('UPDATE produtos SET estoque = estoque - ? WHERE id = ?', item.quantidade, item.produto_id);
+      }
+      await tx.run("UPDATE vendas SET tipo = 'venda' WHERE id = ?", venda.id);
+    });
+    return res.json(await getVendaDetalhe(venda.id));
   } catch (erro) {
     return res.status(500).json({ erro: 'Erro ao confirmar a encomenda.' });
   }
 });
 
-router.delete('/:id', (req, res) => {
-  const venda = db.prepare('SELECT * FROM vendas WHERE id = ?').get(req.params.id);
+router.delete('/:id', async (req, res) => {
+  const venda = await db.get('SELECT * FROM vendas WHERE id = ?', req.params.id);
   if (!venda) {
     return res.status(404).json({ erro: 'Venda não encontrada.' });
   }
@@ -242,20 +253,18 @@ router.delete('/:id', (req, res) => {
     return res.status(400).json({ erro: 'Venda já cancelada.' });
   }
 
-  const itens = db.prepare('SELECT * FROM venda_itens WHERE venda_id = ?').all(venda.id);
-
-  const transacao = db.transaction(() => {
-    if (venda.tipo === 'venda') {
-      for (const item of itens) {
-        db.prepare('UPDATE produtos SET estoque = estoque + ? WHERE id = ?').run(item.quantidade, item.produto_id);
-      }
-    }
-    db.prepare('UPDATE vendas SET status = \'cancelada\' WHERE id = ?').run(venda.id);
-  });
+  const itens = await db.all('SELECT * FROM venda_itens WHERE venda_id = ?', venda.id);
 
   try {
-    transacao();
-    return res.json(getVendaDetalhe(venda.id));
+    await db.transacao(async (tx) => {
+      if (venda.tipo === 'venda') {
+        for (const item of itens) {
+          await tx.run('UPDATE produtos SET estoque = estoque + ? WHERE id = ?', item.quantidade, item.produto_id);
+        }
+      }
+      await tx.run("UPDATE vendas SET status = 'cancelada' WHERE id = ?", venda.id);
+    });
+    return res.json(await getVendaDetalhe(venda.id));
   } catch (erro) {
     return res.status(500).json({ erro: 'Erro ao cancelar a venda.' });
   }

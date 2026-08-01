@@ -1,5 +1,5 @@
 const express = require('express');
-const db = require('../db');
+const { db } = require('../db');
 const autenticar = require('../middleware/auth');
 
 const router = express.Router();
@@ -11,7 +11,7 @@ function validarPeriodo(inicio, fim) {
   return { inicio: inicio || null, fim: fim || null };
 }
 
-function consultarResumo(inicio, fim) {
+async function consultarResumo(inicio, fim) {
   const periodo = validarPeriodo(inicio, fim);
   const temPeriodo = !!(periodo && periodo.inicio);
 
@@ -23,7 +23,7 @@ function consultarResumo(inicio, fim) {
     sqlVendas += ' AND date(criado_em) BETWEEN ? AND ?';
     paramsV.push(periodo.inicio, periodo.fim);
   }
-  const vendas = db.prepare(sqlVendas).get(...paramsV);
+  const vendas = await db.get(sqlVendas, ...paramsV);
 
   let sqlLucro =
     `SELECT COALESCE(SUM((i.preco_unitario - i.custo_unitario) * i.quantidade), 0) AS lucro,
@@ -34,11 +34,11 @@ function consultarResumo(inicio, fim) {
   if (temPeriodo) {
     sqlLucro += ' AND date(v.criado_em) BETWEEN ? AND ?';
   }
-  const lucro = db.prepare(sqlLucro).get(...paramsV);
+  const lucro = await db.get(sqlLucro, ...paramsV);
 
-  const encomendas = db
-    .prepare("SELECT COUNT(*) AS quantidade FROM vendas WHERE status = 'ativa' AND tipo = 'encomenda'")
-    .get();
+  const encomendas = await db.get(
+    "SELECT COUNT(*) AS quantidade FROM vendas WHERE status = 'ativa' AND tipo = 'encomenda'"
+  );
 
   const paramsG = [];
   let sqlGastos =
@@ -48,26 +48,22 @@ function consultarResumo(inicio, fim) {
     sqlGastos += ' AND date(criado_em) BETWEEN ? AND ?';
     paramsG.push(periodo.inicio, periodo.fim);
   }
-  const gastos = db.prepare(sqlGastos).get(...paramsG);
+  const gastos = await db.get(sqlGastos, ...paramsG);
 
-  const parcelasAbertas = db
-    .prepare(
-      `SELECT COUNT(*) AS quantidade, COALESCE(SUM(pa.valor), 0) AS valor
-       FROM parcelas pa JOIN vendas v ON v.id = pa.venda_id
-       WHERE v.status = 'ativa' AND pa.pago = 0`
-    )
-    .get();
+  const parcelasAbertas = await db.get(
+    `SELECT COUNT(*) AS quantidade, COALESCE(SUM(pa.valor), 0) AS valor
+     FROM parcelas pa JOIN vendas v ON v.id = pa.venda_id
+     WHERE v.status = 'ativa' AND pa.pago = 0`
+  );
 
-  const parcelasVencidas = db
-    .prepare(
-      `SELECT COUNT(*) AS quantidade, COALESCE(SUM(pa.valor), 0) AS valor
-       FROM parcelas pa JOIN vendas v ON v.id = pa.venda_id
-       WHERE v.status = 'ativa' AND pa.pago = 0 AND pa.data_vencimento < date('now', 'localtime')`
-    )
-    .get();
+  const parcelasVencidas = await db.get(
+    `SELECT COUNT(*) AS quantidade, COALESCE(SUM(pa.valor), 0) AS valor
+     FROM parcelas pa JOIN vendas v ON v.id = pa.venda_id
+     WHERE v.status = 'ativa' AND pa.pago = 0 AND pa.data_vencimento < date('now', 'localtime')`
+  );
 
-  const clientes = db.prepare('SELECT COUNT(*) AS quantidade FROM clientes').get();
-  const produtos = db.prepare('SELECT COUNT(*) AS quantidade FROM produtos').get();
+  const clientes = await db.get('SELECT COUNT(*) AS quantidade FROM clientes');
+  const produtos = await db.get('SELECT COUNT(*) AS quantidade FROM produtos');
 
   return {
     periodo: temPeriodo ? { inicio: periodo.inicio, fim: periodo.fim } : null,
@@ -95,15 +91,15 @@ function consultarResumo(inicio, fim) {
   };
 }
 
-router.get('/resumo', (req, res) => {
+router.get('/resumo', async (req, res) => {
   const { inicio, fim } = req.query;
   if (inicio && fim && inicio > fim) {
     return res.status(400).json({ erro: 'A data inicial não pode ser maior que a final.' });
   }
-  return res.json(consultarResumo(inicio, fim));
+  return res.json(await consultarResumo(inicio, fim));
 });
 
-router.get('/vendas', (req, res) => {
+router.get('/vendas', async (req, res) => {
   const { inicio, fim } = req.query;
   if (inicio && fim && inicio > fim) {
     return res.status(400).json({ erro: 'A data inicial não pode ser maior que a final.' });
@@ -128,7 +124,7 @@ router.get('/vendas', (req, res) => {
   }
   sql += ' GROUP BY v.id ORDER BY v.id DESC LIMIT 200';
 
-  const linhas = db.prepare(sql).all(...params);
+  const linhas = await db.all(sql, ...params);
   return res.json(
     linhas.map((l) => ({
       ...l,
@@ -137,7 +133,7 @@ router.get('/vendas', (req, res) => {
   );
 });
 
-router.get('/parcelas', (req, res) => {
+router.get('/parcelas', async (req, res) => {
   const { status } = req.query;
 
   let sql = `
@@ -156,10 +152,10 @@ router.get('/parcelas', (req, res) => {
   }
   sql += ' ORDER BY pa.data_vencimento ASC, v.id DESC';
 
-  return res.json(db.prepare(sql).all());
+  return res.json(await db.all(sql));
 });
 
-router.get('/gastos', (req, res) => {
+router.get('/gastos', async (req, res) => {
   const { inicio, fim } = req.query;
   if (inicio && fim && inicio > fim) {
     return res.status(400).json({ erro: 'A data inicial não pode ser maior que a final.' });
@@ -179,7 +175,7 @@ router.get('/gastos', (req, res) => {
   }
   sql += ' ORDER BY m.id DESC LIMIT 200';
 
-  return res.json(db.prepare(sql).all(...params));
+  return res.json(await db.all(sql, ...params));
 });
 
 module.exports = router;

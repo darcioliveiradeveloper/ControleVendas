@@ -1,12 +1,12 @@
 const express = require('express');
-const db = require('../db');
+const { db } = require('../db');
 const autenticar = require('../middleware/auth');
 
 const router = express.Router();
 
 router.use(autenticar);
 
-router.post('/movimentos', (req, res) => {
+router.post('/movimentos', async (req, res) => {
   const { produto_id, tipo, quantidade, custo_unitario, observacao } = req.body || {};
 
   if (!produto_id) {
@@ -21,7 +21,7 @@ router.post('/movimentos', (req, res) => {
     return res.status(400).json({ erro: 'A quantidade deve ser maior que zero.' });
   }
 
-  const produto = db.prepare('SELECT * FROM produtos WHERE id = ?').get(produto_id);
+  const produto = await db.get('SELECT * FROM produtos WHERE id = ?', produto_id);
   if (!produto) {
     return res.status(404).json({ erro: 'Produto não encontrado.' });
   }
@@ -39,46 +39,50 @@ router.post('/movimentos', (req, res) => {
   const novoEstoque =
     tipo === 'entrada' ? produto.estoque + qtd : produto.estoque - qtd;
 
-  const transacao = db.transaction(() => {
-    const resultado = db
-      .prepare(
+  try {
+    const movimento = await db.transacao(async (tx) => {
+      const resultado = await tx.run(
         `INSERT INTO movimentos_estoque (produto_id, tipo, quantidade, custo_unitario, observacao)
-         VALUES (?, ?, ?, ?, ?)`
-      )
-      .run(produto_id, tipo, qtd, custo, observacao ? String(observacao).trim() || null : null);
+         VALUES (?, ?, ?, ?, ?)`,
+        produto_id,
+        tipo,
+        qtd,
+        custo,
+        observacao ? String(observacao).trim() || null : null
+      );
 
-    if (tipo === 'entrada' && custo !== null && custo > 0) {
-      const margem = produto.margem_percentual;
-      const novoPrecoVenda = Math.round(custo * (1 + margem / 100) * 100) / 100;
-      db.prepare(
-        `UPDATE produtos
-         SET preco_custo = ?, preco_venda = ?, atualizado_em = datetime('now', 'localtime')
-         WHERE id = ?`
-      ).run(custo, novoPrecoVenda, produto_id);
-    }
+      if (tipo === 'entrada' && custo !== null && custo > 0) {
+        const margem = produto.margem_percentual;
+        const novoPrecoVenda = Math.round(custo * (1 + margem / 100) * 100) / 100;
+        await tx.run(
+          `UPDATE produtos
+           SET preco_custo = ?, preco_venda = ?, atualizado_em = datetime('now', 'localtime')
+           WHERE id = ?`,
+          custo,
+          novoPrecoVenda,
+          produto_id
+        );
+      }
 
-    db.prepare('UPDATE produtos SET estoque = ? WHERE id = ?').run(novoEstoque, produto_id);
+      await tx.run('UPDATE produtos SET estoque = ? WHERE id = ?', novoEstoque, produto_id);
 
-    return db
-      .prepare(
+      return tx.get(
         `SELECT m.*, p.nome AS produto_nome
          FROM movimentos_estoque m
          JOIN produtos p ON p.id = m.produto_id
-         WHERE m.id = ?`
-      )
-      .get(resultado.lastInsertRowid);
-  });
+         WHERE m.id = ?`,
+        resultado.lastInsertRowid
+      );
+    });
 
-  try {
-    const movimento = transacao();
-    const novoProduto = db.prepare('SELECT * FROM produtos WHERE id = ?').get(produto_id);
+    const novoProduto = await db.get('SELECT * FROM produtos WHERE id = ?', produto_id);
     return res.status(201).json({ movimento, estoque_atual: novoProduto.estoque });
   } catch (erro) {
     return res.status(500).json({ erro: 'Erro ao registrar movimento.' });
   }
 });
 
-router.get('/movimentos', (req, res) => {
+router.get('/movimentos', async (req, res) => {
   const { produto_id, tipo } = req.query;
 
   let sql = `
@@ -98,17 +102,17 @@ router.get('/movimentos', (req, res) => {
   }
 
   sql += ' ORDER BY m.id DESC LIMIT 200';
-  const linhas = db.prepare(sql).all(...params);
+  const linhas = await db.all(sql, ...params);
   return res.json(linhas);
 });
 
-router.delete('/movimentos/:id', (req, res) => {
-  const movimento = db.prepare('SELECT * FROM movimentos_estoque WHERE id = ?').get(req.params.id);
+router.delete('/movimentos/:id', async (req, res) => {
+  const movimento = await db.get('SELECT * FROM movimentos_estoque WHERE id = ?', req.params.id);
   if (!movimento) {
     return res.status(404).json({ erro: 'Movimento não encontrado.' });
   }
 
-  const produto = db.prepare('SELECT * FROM produtos WHERE id = ?').get(movimento.produto_id);
+  const produto = await db.get('SELECT * FROM produtos WHERE id = ?', movimento.produto_id);
   if (!produto) {
     return res.status(404).json({ erro: 'Produto não encontrado.' });
   }
@@ -122,14 +126,12 @@ router.delete('/movimentos/:id', (req, res) => {
     });
   }
 
-  const transacao = db.transaction(() => {
-    db.prepare('UPDATE produtos SET estoque = ? WHERE id = ?').run(novoEstoque, produto.id);
-    db.prepare('DELETE FROM movimentos_estoque WHERE id = ?').run(movimento.id);
-  });
-
   try {
-    transacao();
-    const novoProduto = db.prepare('SELECT * FROM produtos WHERE id = ?').get(produto.id);
+    await db.transacao(async (tx) => {
+      await tx.run('UPDATE produtos SET estoque = ? WHERE id = ?', novoEstoque, produto.id);
+      await tx.run('DELETE FROM movimentos_estoque WHERE id = ?', movimento.id);
+    });
+    const novoProduto = await db.get('SELECT * FROM produtos WHERE id = ?', produto.id);
     return res.json({ ok: true, estoque_atual: novoProduto.estoque });
   } catch (erro) {
     return res.status(500).json({ erro: 'Erro ao estornar movimento.' });
