@@ -6,6 +6,7 @@ const authRoutes = require('./src/routes/auth.routes');
 const produtosRoutes = require('./src/routes/produtos.routes');
 const estoqueRoutes = require('./src/routes/estoque.routes');
 const clientesRoutes = require('./src/routes/clientes.routes');
+const vendasRoutes = require('./src/routes/vendas.routes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -17,6 +18,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/produtos', produtosRoutes);
 app.use('/api/estoque', estoqueRoutes);
 app.use('/api/clientes', clientesRoutes);
+app.use('/api/vendas', vendasRoutes);
 
 app.get('/api/me', autenticar, (req, res) => {
   res.json({ usuario: req.usuario });

@@ -32,7 +32,7 @@
         <button class="nav-item" data-tela="clientes">
           <span class="nav-icon">&#128101;</span> Clientes
         </button>
-        <button class="nav-item disabled" title="Disponível na próxima etapa">
+        <button class="nav-item" data-tela="vendas">
           <span class="nav-icon">&#128176;</span> Vendas
         </button>
         <button class="nav-item disabled" title="Disponível na próxima etapa">
@@ -223,7 +223,125 @@
             </div>
           </div>
         </section>
+
+        <section id="tela-vendas" class="tela hidden">
+          <div class="panel">
+            <h2>Nova venda / encomenda</h2>
+            <form id="form-venda">
+              <div class="venda-layout">
+                <div class="venda-esquerda">
+                  <div class="field">
+                    <label>Cliente</label>
+                    <div class="busca-relativa">
+                      <input id="v-busca-cliente" type="text" placeholder="Buscar cliente pelo nome ou telefone..." autocomplete="off" />
+                      <div id="resultado-clientes" class="resultado-busca hidden"></div>
+                    </div>
+                    <input type="hidden" id="v-cliente-id" />
+                  </div>
+                  <div class="field">
+                    <label>Adicionar produto</label>
+                    <div class="busca-relativa">
+                      <input id="v-busca-produto" type="text" placeholder="Buscar produto para adicionar..." autocomplete="off" />
+                      <div id="resultado-produtos" class="resultado-busca hidden"></div>
+                    </div>
+                  </div>
+                  <div class="table-wrapper">
+                    <table class="tabela">
+                      <thead>
+                        <tr>
+                          <th>Produto</th>
+                          <th>Qtd.</th>
+                          <th>Preço</th>
+                          <th>Subtotal</th>
+                          <th></th>
+                        </tr>
+                      </thead>
+                      <tbody id="corpo-carrinho"></tbody>
+                    </table>
+                  </div>
+                </div>
+                <div class="venda-direita">
+                  <div class="field">
+                    <label for="v-tipo">Tipo</label>
+                    <select id="v-tipo">
+                      <option value="venda">Venda</option>
+                      <option value="encomenda">Encomenda (pedido futuro)</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="v-pagamento">Forma de pagamento</label>
+                    <select id="v-pagamento">
+                      <option value="a_vista">À vista</option>
+                      <option value="parcelado">Parcelado</option>
+                    </select>
+                  </div>
+                  <div id="campo-pago" class="field">
+                    <label class="checkbox-label">
+                      <input type="checkbox" id="v-pago" checked />
+                      Pago na hora
+                    </label>
+                  </div>
+                  <div id="campo-parcelas" class="hidden">
+                    <div class="field">
+                      <label for="v-num-parcelas">Número de parcelas</label>
+                      <input id="v-num-parcelas" type="number" min="1" step="1" value="1" />
+                    </div>
+                    <div class="field">
+                      <label for="v-data-primeira">Data da 1ª parcela</label>
+                      <input id="v-data-primeira" type="date" />
+                    </div>
+                  </div>
+                  <div class="total-box">
+                    <span>Total</span>
+                    <strong id="v-total">R$ 0,00</strong>
+                  </div>
+                  <button type="submit" id="btn-finalizar" class="btn primary">Finalizar</button>
+                  <div id="msg-venda" class="mensagem hidden"></div>
+                </div>
+              </div>
+            </form>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head">
+              <h2>Vendas e encomendas</h2>
+              <div class="filtros">
+                <select id="filtro-status-vendas">
+                  <option value="">Todas</option>
+                  <option value="ativa">Ativas</option>
+                  <option value="cancelada">Canceladas</option>
+                </select>
+              </div>
+            </div>
+            <div class="table-wrapper">
+              <table class="tabela">
+                <thead>
+                  <tr>
+                    <th>Data</th>
+                    <th>Cliente</th>
+                    <th>Tipo</th>
+                    <th>Itens</th>
+                    <th>Total</th>
+                    <th>Pagamento</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="corpo-vendas"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
       </main>
+    </div>
+  </div>
+
+  <div id="modal-venda" class="modal hidden">
+    <div class="modal-conteudo">
+      <div class="modal-cabecalho">
+        <h2 id="modal-titulo">Detalhes da venda</h2>
+        <button id="btn-fechar-modal" class="modal-fechar" type="button">&times;</button>
+      </div>
+      <div id="modal-corpo"></div>
     </div>
   </div>
 
@@ -231,5 +349,6 @@
   <script src="js/produtos.js"></script>
   <script src="js/estoque.js"></script>
   <script src="js/clientes.js"></script>
+  <script src="js/vendas.js"></script>
 </body>
 </html>
