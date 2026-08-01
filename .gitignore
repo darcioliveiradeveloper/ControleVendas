@@ -1,21 +1,4 @@
-# Dependencias
-node_modules/
-
-# Banco de dados local
-*.db
-*.sqlite
-*.sqlite3
-
-# Uploads (fotos de produtos)
-uploads/*
-!uploads/.gitkeep
-
-# Ambiente
-.env
-
-# Logs
-*.log
-
 # Sistema operacional
 .DS_Store
 Thumbs.db
+desktop.ini

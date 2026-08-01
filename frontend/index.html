@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Controle de Vendas</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <main class="auth-page">
+    <section class="auth-card">
+      <div class="auth-header">
+        <div class="logo">
+          <span class="logo-icon">V</span>
+        </div>
+        <h1>Controle de Vendas</h1>
+        <p class="subtitle">Acesso ao sistema</p>
+      </div>
+
+      <div class="field campo-servidor">
+        <label for="config-servidor">Endereço do servidor</label>
+        <input id="config-servidor" type="text" placeholder="http://localhost:3000" autocomplete="off" />
+        <span class="help">Celular na mesma rede? Use o IP do computador, ex.: http://192.168.1.10:3000</span>
+      </div>
+
+      <div class="tabs">
+        <button id="tab-login" class="tab active" type="button">Entrar</button>
+        <button id="tab-cadastro" class="tab" type="button">Criar conta</button>
+      </div>
+
+      <form id="form-login" class="form" autocomplete="off">
+        <div class="field">
+          <label for="login-email">Email</label>
+          <input id="login-email" name="email" type="email" placeholder="seu@email.com" required />
+        </div>
+        <div class="field">
+          <label for="login-senha">Senha</label>
+          <input id="login-senha" name="senha" type="password" placeholder="Sua senha" required />
+        </div>
+        <button type="submit" class="btn primary">Entrar</button>
+      </form>
+
+      <form id="form-cadastro" class="form hidden" autocomplete="off">
+        <div class="field">
+          <label for="cad-nome">Nome</label>
+          <input id="cad-nome" name="nome" type="text" placeholder="Seu nome" required />
+        </div>
+        <div class="field">
+          <label for="cad-email">Email</label>
+          <input id="cad-email" name="email" type="email" placeholder="seu@email.com" required />
+        </div>
+        <div class="field">
+          <label for="cad-senha">Senha</label>
+          <input id="cad-senha" name="senha" type="password" placeholder="Crie uma senha" required minlength="4" />
+        </div>
+        <button type="submit" class="btn primary">Criar conta</button>
+      </form>
+
+      <div id="mensagem" class="mensagem hidden"></div>
+    </section>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

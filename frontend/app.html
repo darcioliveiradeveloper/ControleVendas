@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Controle de Vendas</title>
+  <link rel="stylesheet" href="css/app.css" />
+</head>
+<body>
+  <div class="app">
+    <aside id="sidebar" class="sidebar">
+      <div class="sidebar-logo">
+        <div class="logo">
+          <span class="logo-icon">V</span>
+        </div>
+        <h2>Controle de Vendas</h2>
+      </div>
+
+      <nav class="nav" id="nav">
+        <button class="nav-item" data-tela="resumo">
+          <span class="nav-icon">📊</span> Resumo
+        </button>
+        <button class="nav-item" data-tela="produtos">
+          <span class="nav-icon">📦</span> Produtos
+        </button>
+        <button class="nav-item" data-tela="estoque">
+          <span class="nav-icon">🗃️</span> Estoque
+        </button>
+        <button class="nav-item" data-tela="vendas">
+          <span class="nav-icon">🛒</span> Vendas
+        </button>
+        <button class="nav-item" data-tela="clientes">
+          <span class="nav-icon">👥</span> Clientes
+        </button>
+        <button class="nav-item" data-tela="relatorios">
+          <span class="nav-icon">📈</span> Relatórios
+        </button>
+      </nav>
+
+      <div class="sidebar-user">
+        <span id="usuario-nome">Carregando...</span>
+        <button class="btn secondary small" id="btn-sair">Sair</button>
+      </div>
+    </aside>
+
+    <div id="overlay" class="overlay hidden"></div>
+
+    <main class="main">
+      <header class="topbar">
+        <button id="btn-menu" class="icon-btn" type="button">☰</button>
+        <h1 id="titulo-tela">Resumo</h1>
+      </header>
+
+      <div class="content">
+        <section id="tela-resumo" class="tela"></section>
+        <section id="tela-produtos" class="tela hidden"></section>
+        <section id="tela-estoque" class="tela hidden"></section>
+        <section id="tela-vendas" class="tela hidden"></section>
+        <section id="tela-clientes" class="tela hidden"></section>
+        <section id="tela-relatorios" class="tela hidden"></section>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/app-shell.js"></script>
+  <script src="js/resumo.js"></script>
+  <script src="js/produtos.js"></script>
+  <script src="js/estoque.js"></script>
+  <script src="js/vendas.js"></script>
+  <script src="js/clientes.js"></script>
+  <script src="js/relatorios.js"></script>
+</body>
+</html>
