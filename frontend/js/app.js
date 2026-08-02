@@ -19,11 +19,17 @@ function setCarregando(botao, carregando, textoNormal) {
 // ---- Servidor ------------------------------------------------------------
 
 const campoServidor = $('config-servidor');
-campoServidor.value = obterApiUrl();
+const areaServidor = document.querySelector('.campo-servidor');
+const apiSalva = localStorage.getItem('apiUrl');
+if (apiSalva) {
+  campoServidor.value = apiSalva;
+} else {
+  areaServidor.classList.add('hidden');
+}
 
 campoServidor.addEventListener('change', () => {
   definirApiUrl(campoServidor.value);
-  campoServidor.value = obterApiUrl();
+  if (!campoServidor.value) areaServidor.classList.add('hidden');
 });
 
 // ---- Abas -------------------------------------------------------------
