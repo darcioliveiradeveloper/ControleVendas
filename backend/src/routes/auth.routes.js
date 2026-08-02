@@ -1,7 +1,9 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { db } = require('../db');
+const Usuario = require('../models/Usuario');
+const { proximoId } = require('../ids');
+const { agoraLocal } = require('../utilidades');
 
 const router = express.Router();
 
@@ -14,29 +16,25 @@ router.post('/registrar', async (req, res) => {
 
   const emailNormalizado = String(email).trim().toLowerCase();
 
-  const existe = await db.get('SELECT id FROM usuarios WHERE email = ?', emailNormalizado);
+  const existe = await Usuario.findOne({ email: emailNormalizado });
   if (existe) {
     return res.status(409).json({ erro: 'Já existe uma conta com este email.' });
   }
 
   const senhaHash = bcrypt.hashSync(String(senha), 10);
 
-  const resultado = await db.run(
-    'INSERT INTO usuarios (nome, email, senha_hash) VALUES (?, ?, ?)',
-    nome.trim(),
-    emailNormalizado,
-    senhaHash
-  );
-
-  const usuario = {
-    id: resultado.lastInsertRowid,
+  const usuario = await Usuario.create({
+    _id: await proximoId('usuarios'),
     nome: nome.trim(),
     email: emailNormalizado,
-  };
+    senha_hash: senhaHash,
+    criado_em: agoraLocal(),
+  });
 
-  const token = gerarToken(usuario);
+  const dados = { id: usuario._id, nome: usuario.nome, email: usuario.email };
+  const token = gerarToken(dados);
 
-  return res.status(201).json({ token, usuario });
+  return res.status(201).json({ token, usuario: dados });
 });
 
 router.post('/login', async (req, res) => {
@@ -47,16 +45,13 @@ router.post('/login', async (req, res) => {
   }
 
   const emailNormalizado = String(email).trim().toLowerCase();
-  const usuario = await db.get(
-    'SELECT id, nome, email, senha_hash FROM usuarios WHERE email = ?',
-    emailNormalizado
-  );
+  const usuario = await Usuario.findOne({ email: emailNormalizado });
 
   if (!usuario || !bcrypt.compareSync(String(senha), usuario.senha_hash)) {
     return res.status(401).json({ erro: 'Email ou senha incorretos.' });
   }
 
-  const dados = { id: usuario.id, nome: usuario.nome, email: usuario.email };
+  const dados = { id: usuario._id, nome: usuario.nome, email: usuario.email };
   const token = gerarToken(dados);
 
   return res.json({ token, usuario: dados });

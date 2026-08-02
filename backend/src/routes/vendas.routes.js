@@ -1,53 +1,26 @@
 const express = require('express');
-const { db } = require('../db');
+const Venda = require('../models/Venda');
+const Produto = require('../models/Produto');
+const Cliente = require('../models/Cliente');
 const autenticar = require('../middleware/auth');
+const { proximoId } = require('../ids');
+const { agoraLocal, hoje, adicionarMeses, arredondar } = require('../utilidades');
 
 const router = express.Router();
 
 router.use(autenticar);
 
-function hoje() {
-  return new Date().toISOString().slice(0, 10);
+function detalhe(venda) {
+  const obj = venda.toJSON();
+  const pagas = obj.parcelas.filter((p) => p.pago);
+  obj.parcelas_pagas = pagas.length;
+  obj.valor_pago = arredondar(pagas.reduce((s, p) => s + p.valor, 0));
+  obj.quitada = obj.parcelas.length > 0 && pagas.length === obj.parcelas.length;
+  return obj;
 }
 
-function addMeses(data, meses) {
-  const [ano, mes, dia] = data.split('-').map(Number);
-  const d = new Date(ano, mes - 1 + meses, dia);
-  const a = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const dd = String(d.getDate()).padStart(2, '0');
-  return `${a}-${m}-${dd}`;
-}
-
-async function getVendaDetalhe(id) {
-  const venda = await db.get(
-    `SELECT v.*, c.nome AS cliente_nome
-     FROM vendas v
-     LEFT JOIN clientes c ON c.id = v.cliente_id
-     WHERE v.id = ?`,
-    id
-  );
-  if (!venda) return null;
-
-  venda.itens = await db.all(
-    `SELECT i.*, p.nome AS produto_nome
-     FROM venda_itens i
-     JOIN produtos p ON p.id = i.produto_id
-     WHERE i.venda_id = ?`,
-    id
-  );
-
-  venda.parcelas = await db.all(
-    'SELECT * FROM parcelas WHERE venda_id = ? ORDER BY numero',
-    id
-  );
-
-  const pagas = venda.parcelas.filter((p) => p.pago);
-  venda.parcelas_pagas = pagas.length;
-  venda.valor_pago = Math.round(pagas.reduce((s, p) => s + p.valor, 0) * 100) / 100;
-  venda.quitada = venda.parcelas.length > 0 && pagas.length === venda.parcelas.length;
-
-  return venda;
+function escaparRegex(texto) {
+  return String(texto).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 router.post('/', async (req, res) => {
@@ -66,28 +39,30 @@ router.post('/', async (req, res) => {
     if (!qtd || qtd <= 0) {
       return res.status(400).json({ erro: 'Quantidade inválida em um dos produtos.' });
     }
-    const produto = await db.get('SELECT * FROM produtos WHERE id = ?', item.produto_id);
+    const produto = await Produto.findById(Number(item.produto_id));
     if (!produto) {
       return res.status(400).json({ erro: 'Um dos produtos não foi encontrado.' });
     }
-    itensCarregados.push({ ...produto, quantidade: qtd });
+    itensCarregados.push({ produto, quantidade: qtd });
   }
 
   if (tipoVenda === 'venda') {
     const faltando = itensCarregados
-      .filter((i) => i.estoque < i.quantidade)
-      .map((i) => `${i.nome} (disponível: ${i.estoque})`);
+      .filter((i) => i.produto.estoque < i.quantidade)
+      .map((i) => `${i.produto.nome} (disponível: ${i.produto.estoque})`);
     if (faltando.length) {
       return res.status(400).json({ erro: `Estoque insuficiente para: ${faltando.join(', ')}.` });
     }
   }
 
-  const total = Math.round(itensCarregados.reduce((s, i) => s + i.preco_venda * i.quantidade, 0) * 100) / 100;
+  const total = arredondar(
+    itensCarregados.reduce((s, i) => s + i.produto.preco_venda * i.quantidade, 0)
+  );
 
   let listaParcelas;
   if (forma === 'a_vista') {
     const venc = data_primeira_parcela || hoje();
-    listaParcelas = [{ numero: 1, valor: total, data_vencimento: venc, pago: pago ? 1 : 0 }];
+    listaParcelas = [{ numero: 1, valor: total, data_vencimento: venc, pago: pago ? true : false }];
   } else {
     const n = Math.max(1, parseInt(numero_parcelas, 10) || 1);
     const primeira = data_primeira_parcela || hoje();
@@ -95,120 +70,112 @@ router.post('/', async (req, res) => {
     listaParcelas = [];
     let soma = 0;
     for (let i = 1; i <= n; i++) {
-      const valor = i === n ? Math.round((total - soma) * 100) / 100 : valorBase;
-      soma = Math.round((soma + valor) * 100) / 100;
-      listaParcelas.push({ numero: i, valor, data_vencimento: addMeses(primeira, i - 1), pago: 0 });
+      const valor = i === n ? arredondar(total - soma) : valorBase;
+      soma = arredondar(soma + valor);
+      listaParcelas.push({ numero: i, valor, data_vencimento: adicionarMeses(primeira, i - 1), pago: false });
     }
   }
 
-  try {
-    const vendaId = await db.transacao(async (tx) => {
-      const resultado = await tx.run(
-        'INSERT INTO vendas (cliente_id, tipo, forma_pagamento, total) VALUES (?, ?, ?, ?)',
-        cliente_id || null,
-        tipoVenda,
-        forma,
-        total
+  if (tipoVenda === 'venda') {
+    for (const item of itensCarregados) {
+      const atualizado = await Produto.findOneAndUpdate(
+        { _id: item.produto._id, estoque: { $gte: item.quantidade } },
+        { $inc: { estoque: -item.quantidade }, $set: { atualizado_em: agoraLocal() } }
       );
-      const idVenda = resultado.lastInsertRowid;
-
-      for (const item of itensCarregados) {
-        await tx.run(
-          'INSERT INTO venda_itens (venda_id, produto_id, quantidade, preco_unitario, custo_unitario) VALUES (?, ?, ?, ?, ?)',
-          idVenda,
-          item.id,
-          item.quantidade,
-          item.preco_venda,
-          item.preco_custo
-        );
-
-        if (tipoVenda === 'venda') {
-          await tx.run(
-            "UPDATE produtos SET estoque = estoque - ?, atualizado_em = datetime('now', 'localtime') WHERE id = ?",
-            item.quantidade,
-            item.id
-          );
-        }
+      if (!atualizado) {
+        return res.status(400).json({ erro: `Estoque insuficiente para: ${item.produto.nome}.` });
       }
+    }
+  }
 
-      for (const p of listaParcelas) {
-        await tx.run(
-          'INSERT INTO parcelas (venda_id, numero, valor, data_vencimento, pago, data_pagamento) VALUES (?, ?, ?, ?, ?, ?)',
-          idVenda,
-          p.numero,
-          p.valor,
-          p.data_vencimento,
-          p.pago,
-          p.pago ? hoje() : null
-        );
-      }
+  let clienteNome = null;
+  if (cliente_id) {
+    const cliente = await Cliente.findById(Number(cliente_id));
+    clienteNome = cliente ? cliente.nome : null;
+  }
 
-      return idVenda;
+  try {
+    const venda = await Venda.create({
+      _id: await proximoId('vendas'),
+      cliente_id: cliente_id ? Number(cliente_id) : null,
+      cliente_nome: clienteNome,
+      tipo: tipoVenda,
+      forma_pagamento: forma,
+      total,
+      itens: itensCarregados.map((i) => ({
+        produto_id: i.produto._id,
+        produto_nome: i.produto.nome,
+        quantidade: i.quantidade,
+        preco_unitario: i.produto.preco_venda,
+        custo_unitario: i.produto.preco_custo,
+      })),
+      parcelas: listaParcelas,
+      criado_em: agoraLocal(),
     });
-    return res.status(201).json(await getVendaDetalhe(vendaId));
+
+    return res.status(201).json(detalhe(venda));
   } catch (erro) {
+    if (tipoVenda === 'venda') {
+      for (const item of itensCarregados) {
+        await Produto.updateOne({ _id: item.produto._id }, { $inc: { estoque: item.quantidade } });
+      }
+    }
     return res.status(500).json({ erro: 'Erro ao registrar a venda.' });
   }
 });
 
 router.get('/', async (req, res) => {
   const { tipo, status, busca } = req.query;
+  const filtro = {};
+  if (tipo) filtro.tipo = tipo;
+  if (status) filtro.status = status;
+  if (busca) filtro.cliente_nome = new RegExp(escaparRegex(busca), 'i');
 
-  let sql = `
-    SELECT v.id, v.cliente_id, v.tipo, v.forma_pagamento, v.total, v.status, v.criado_em,
-           c.nome AS cliente_nome,
-           (SELECT COUNT(*) FROM venda_itens i WHERE i.venda_id = v.id) AS total_itens,
-           (SELECT COUNT(*) FROM parcelas pa WHERE pa.venda_id = v.id) AS total_parcelas,
-           (SELECT COUNT(*) FROM parcelas pa WHERE pa.venda_id = v.id AND pa.pago = 1) AS parcelas_pagas,
-           (SELECT COALESCE(SUM(pa.valor), 0) FROM parcelas pa WHERE pa.venda_id = v.id AND pa.pago = 1) AS valor_pago
-    FROM vendas v
-    LEFT JOIN clientes c ON c.id = v.cliente_id
-  `;
-
-  const cond = [];
-  const params = [];
-  if (tipo) { cond.push('v.tipo = ?'); params.push(tipo); }
-  if (status) { cond.push('v.status = ?'); params.push(status); }
-  if (busca) { cond.push('c.nome LIKE ?'); params.push(`%${busca}%`); }
-  if (cond.length) sql += ' WHERE ' + cond.join(' AND ');
-
-  sql += ' ORDER BY v.id DESC LIMIT 100';
-  return res.json(await db.all(sql, ...params));
+  const linhas = await Venda.find(filtro).sort({ _id: -1 }).limit(100);
+  const lista = linhas.map((v) => {
+    const obj = v.toJSON();
+    const pagas = obj.parcelas.filter((p) => p.pago);
+    obj.total_itens = obj.itens.length;
+    obj.total_parcelas = obj.parcelas.length;
+    obj.parcelas_pagas = pagas.length;
+    obj.valor_pago = arredondar(pagas.reduce((s, p) => s + p.valor, 0));
+    return obj;
+  });
+  return res.json(lista);
 });
 
 router.get('/:id', async (req, res) => {
-  const venda = await getVendaDetalhe(req.params.id);
+  const venda = await Venda.findById(Number(req.params.id));
   if (!venda) {
     return res.status(404).json({ erro: 'Venda não encontrada.' });
   }
-  return res.json(venda);
+  return res.json(detalhe(venda));
 });
 
 router.put('/:id/parcelas/:parcelaId', async (req, res) => {
-  const venda = await db.get('SELECT * FROM vendas WHERE id = ?', req.params.id);
+  const venda = await Venda.findById(Number(req.params.id));
   if (!venda) {
     return res.status(404).json({ erro: 'Venda não encontrada.' });
   }
   if (venda.status === 'cancelada') {
     return res.status(400).json({ erro: 'Não é possível alterar parcelas de uma venda cancelada.' });
   }
-  const parcela = await db.get('SELECT * FROM parcelas WHERE id = ? AND venda_id = ?', req.params.parcelaId, venda.id);
+
+  const parcela = venda.parcelas.id(req.params.parcelaId);
   if (!parcela) {
     return res.status(404).json({ erro: 'Parcela não encontrada.' });
   }
 
   const { pago } = req.body || {};
-  await db.run('UPDATE parcelas SET pago = ?, data_pagamento = ? WHERE id = ?',
-    pago ? 1 : 0,
-    pago ? hoje() : null,
-    parcela.id
-  );
+  parcela.pago = pago ? true : false;
+  parcela.data_pagamento = pago ? hoje() : null;
+  await venda.save();
 
-  return res.json(await getVendaDetalhe(venda.id));
+  return res.json(detalhe(venda));
 });
 
 router.post('/:id/confirmar', async (req, res) => {
-  const venda = await db.get('SELECT * FROM vendas WHERE id = ?', req.params.id);
+  const venda = await Venda.findById(Number(req.params.id));
   if (!venda) {
     return res.status(404).json({ erro: 'Venda não encontrada.' });
   }
@@ -219,33 +186,31 @@ router.post('/:id/confirmar', async (req, res) => {
     return res.status(400).json({ erro: 'Esta venda não é uma encomenda.' });
   }
 
-  const itens = await db.all('SELECT * FROM venda_itens WHERE venda_id = ?', venda.id);
   const faltando = [];
-  for (const item of itens) {
-    const produto = await db.get('SELECT * FROM produtos WHERE id = ?', item.produto_id);
+  for (const item of venda.itens) {
+    const produto = await Produto.findById(item.produto_id);
     if (!produto || produto.estoque < item.quantidade) {
-      faltando.push(`${produto ? produto.nome : 'Produto removido'} (disponível: ${produto ? produto.estoque : 0})`);
+      faltando.push(`${item.produto_nome || 'Produto removido'} (disponível: ${produto ? produto.estoque : 0})`);
     }
   }
   if (faltando.length) {
     return res.status(400).json({ erro: `Estoque insuficiente para confirmar a encomenda: ${faltando.join(', ')}.` });
   }
 
-  try {
-    await db.transacao(async (tx) => {
-      for (const item of itens) {
-        await tx.run('UPDATE produtos SET estoque = estoque - ? WHERE id = ?', item.quantidade, item.produto_id);
-      }
-      await tx.run("UPDATE vendas SET tipo = 'venda' WHERE id = ?", venda.id);
-    });
-    return res.json(await getVendaDetalhe(venda.id));
-  } catch (erro) {
-    return res.status(500).json({ erro: 'Erro ao confirmar a encomenda.' });
+  for (const item of venda.itens) {
+    await Produto.findOneAndUpdate(
+      { _id: item.produto_id, estoque: { $gte: item.quantidade } },
+      { $inc: { estoque: -item.quantidade }, $set: { atualizado_em: agoraLocal() } }
+    );
   }
+  venda.tipo = 'venda';
+  await venda.save();
+
+  return res.json(detalhe(venda));
 });
 
 router.delete('/:id', async (req, res) => {
-  const venda = await db.get('SELECT * FROM vendas WHERE id = ?', req.params.id);
+  const venda = await Venda.findById(Number(req.params.id));
   if (!venda) {
     return res.status(404).json({ erro: 'Venda não encontrada.' });
   }
@@ -253,21 +218,18 @@ router.delete('/:id', async (req, res) => {
     return res.status(400).json({ erro: 'Venda já cancelada.' });
   }
 
-  const itens = await db.all('SELECT * FROM venda_itens WHERE venda_id = ?', venda.id);
-
-  try {
-    await db.transacao(async (tx) => {
-      if (venda.tipo === 'venda') {
-        for (const item of itens) {
-          await tx.run('UPDATE produtos SET estoque = estoque + ? WHERE id = ?', item.quantidade, item.produto_id);
-        }
-      }
-      await tx.run("UPDATE vendas SET status = 'cancelada' WHERE id = ?", venda.id);
-    });
-    return res.json(await getVendaDetalhe(venda.id));
-  } catch (erro) {
-    return res.status(500).json({ erro: 'Erro ao cancelar a venda.' });
+  if (venda.tipo === 'venda') {
+    for (const item of venda.itens) {
+      await Produto.updateOne(
+        { _id: item.produto_id },
+        { $inc: { estoque: item.quantidade }, $set: { atualizado_em: agoraLocal() } }
+      );
+    }
   }
+  venda.status = 'cancelada';
+  await venda.save();
+
+  return res.json(detalhe(venda));
 });
 
 module.exports = router;

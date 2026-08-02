@@ -1,6 +1,9 @@
 const express = require('express');
-const { db } = require('../db');
+const Produto = require('../models/Produto');
+const MovimentoEstoque = require('../models/MovimentoEstoque');
 const autenticar = require('../middleware/auth');
+const { proximoId } = require('../ids');
+const { agoraLocal, arredondar } = require('../utilidades');
 
 const router = express.Router();
 
@@ -21,98 +24,72 @@ router.post('/movimentos', async (req, res) => {
     return res.status(400).json({ erro: 'A quantidade deve ser maior que zero.' });
   }
 
-  const produto = await db.get('SELECT * FROM produtos WHERE id = ?', produto_id);
+  const idProduto = Number(produto_id);
+  const produto = await Produto.findById(idProduto);
   if (!produto) {
     return res.status(404).json({ erro: 'Produto não encontrado.' });
-  }
-
-  if (tipo === 'saida' && qtd > produto.estoque) {
-    return res.status(400).json({
-      erro: `Estoque insuficiente. Disponível: ${produto.estoque}.`,
-    });
   }
 
   const custo = tipo === 'entrada' && custo_unitario !== undefined
     ? Number(custo_unitario) || 0
     : null;
 
-  const novoEstoque =
-    tipo === 'entrada' ? produto.estoque + qtd : produto.estoque - qtd;
-
   try {
-    const movimento = await db.transacao(async (tx) => {
-      const resultado = await tx.run(
-        `INSERT INTO movimentos_estoque (produto_id, tipo, quantidade, custo_unitario, observacao)
-         VALUES (?, ?, ?, ?, ?)`,
-        produto_id,
-        tipo,
-        qtd,
-        custo,
-        observacao ? String(observacao).trim() || null : null
+    if (tipo === 'saida') {
+      const atualizado = await Produto.findOneAndUpdate(
+        { _id: idProduto, estoque: { $gte: qtd } },
+        { $inc: { estoque: -qtd }, $set: { atualizado_em: agoraLocal() } },
+        { new: true }
       );
-
-      if (tipo === 'entrada' && custo !== null && custo > 0) {
-        const margem = produto.margem_percentual;
-        const novoPrecoVenda = Math.round(custo * (1 + margem / 100) * 100) / 100;
-        await tx.run(
-          `UPDATE produtos
-           SET preco_custo = ?, preco_venda = ?, atualizado_em = datetime('now', 'localtime')
-           WHERE id = ?`,
-          custo,
-          novoPrecoVenda,
-          produto_id
-        );
+      if (!atualizado) {
+        return res.status(400).json({
+          erro: `Estoque insuficiente. Disponível: ${produto.estoque}.`,
+        });
       }
-
-      await tx.run('UPDATE produtos SET estoque = ? WHERE id = ?', novoEstoque, produto_id);
-
-      return tx.get(
-        `SELECT m.*, p.nome AS produto_nome
-         FROM movimentos_estoque m
-         JOIN produtos p ON p.id = m.produto_id
-         WHERE m.id = ?`,
-        resultado.lastInsertRowid
-      );
-    });
-
-    const novoProduto = await db.get('SELECT * FROM produtos WHERE id = ?', produto_id);
-    return res.status(201).json({ movimento, estoque_atual: novoProduto.estoque });
+    } else {
+      const alteracoes = { $inc: { estoque: qtd }, $set: { atualizado_em: agoraLocal() } };
+      if (custo !== null && custo > 0) {
+        alteracoes.$set.preco_custo = custo;
+        alteracoes.$set.preco_venda = arredondar(custo * (1 + produto.margem_percentual / 100));
+      }
+      await Produto.updateOne({ _id: idProduto }, alteracoes);
+    }
   } catch (erro) {
     return res.status(500).json({ erro: 'Erro ao registrar movimento.' });
   }
+
+  const movimento = await MovimentoEstoque.create({
+    _id: await proximoId('movimentos_estoque'),
+    produto_id: idProduto,
+    produto_nome: produto.nome,
+    tipo,
+    quantidade: qtd,
+    custo_unitario: custo,
+    observacao: observacao ? String(observacao).trim() || null : null,
+    criado_em: agoraLocal(),
+  });
+
+  const novoProduto = await Produto.findById(idProduto);
+  return res.status(201).json({ movimento, estoque_atual: novoProduto.estoque });
 });
 
 router.get('/movimentos', async (req, res) => {
   const { produto_id, tipo } = req.query;
+  const filtro = {};
+  if (produto_id) filtro.produto_id = Number(produto_id);
+  if (tipo) filtro.tipo = tipo;
 
-  let sql = `
-    SELECT m.*, p.nome AS produto_nome
-    FROM movimentos_estoque m
-    JOIN produtos p ON p.id = m.produto_id
-  `;
-  const params = [];
-
-  if (produto_id) {
-    sql += ' WHERE m.produto_id = ?';
-    params.push(produto_id);
-  }
-  if (tipo) {
-    sql += sql.includes('WHERE') ? ' AND m.tipo = ?' : ' WHERE m.tipo = ?';
-    params.push(tipo);
-  }
-
-  sql += ' ORDER BY m.id DESC LIMIT 200';
-  const linhas = await db.all(sql, ...params);
+  const linhas = await MovimentoEstoque.find(filtro).sort({ _id: -1 }).limit(200);
   return res.json(linhas);
 });
 
 router.delete('/movimentos/:id', async (req, res) => {
-  const movimento = await db.get('SELECT * FROM movimentos_estoque WHERE id = ?', req.params.id);
+  const movimento = await MovimentoEstoque.findById(Number(req.params.id));
   if (!movimento) {
     return res.status(404).json({ erro: 'Movimento não encontrado.' });
   }
 
-  const produto = await db.get('SELECT * FROM produtos WHERE id = ?', movimento.produto_id);
+  const produto = await Produto.findById(movimento.produto_id);
   if (!produto) {
     return res.status(404).json({ erro: 'Produto não encontrado.' });
   }
@@ -127,15 +104,16 @@ router.delete('/movimentos/:id', async (req, res) => {
   }
 
   try {
-    await db.transacao(async (tx) => {
-      await tx.run('UPDATE produtos SET estoque = ? WHERE id = ?', novoEstoque, produto.id);
-      await tx.run('DELETE FROM movimentos_estoque WHERE id = ?', movimento.id);
-    });
-    const novoProduto = await db.get('SELECT * FROM produtos WHERE id = ?', produto.id);
-    return res.json({ ok: true, estoque_atual: novoProduto.estoque });
+    await Produto.updateOne(
+      { _id: produto._id },
+      { $set: { estoque: novoEstoque, atualizado_em: agoraLocal() } }
+    );
+    await MovimentoEstoque.deleteOne({ _id: movimento._id });
   } catch (erro) {
     return res.status(500).json({ erro: 'Erro ao estornar movimento.' });
   }
+
+  return res.json({ ok: true, estoque_atual: novoEstoque });
 });
 
 module.exports = router;

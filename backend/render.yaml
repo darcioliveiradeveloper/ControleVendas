@@ -11,7 +11,5 @@ services:
         value: 20
       - key: JWT_SECRET
         generateValue: true
-      - key: TURSO_URL
-        sync: false
-      - key: TURSO_TOKEN
+      - key: MONGODB_URI
         sync: false

@@ -2,8 +2,11 @@ const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
 const express = require('express');
-const { db } = require('../db');
+const Produto = require('../models/Produto');
+const MovimentoEstoque = require('../models/MovimentoEstoque');
 const autenticar = require('../middleware/auth');
+const { proximoId } = require('../ids');
+const { agoraLocal, calcularPrecoVenda } = require('../utilidades');
 
 const router = express.Router();
 
@@ -27,25 +30,8 @@ const upload = multer({
   },
 });
 
-function calcularPrecoVenda(custo, margem) {
-  const custoNum = Number(custo) || 0;
-  const margemNum = Number(margem) || 0;
-  return Math.round(custoNum * (1 + margemNum / 100) * 100) / 100;
-}
-
-function normalizarProduto(linha) {
-  return {
-    id: linha.id,
-    nome: linha.nome,
-    descricao: linha.descricao,
-    preco_custo: linha.preco_custo,
-    margem_percentual: linha.margem_percentual,
-    preco_venda: linha.preco_venda,
-    estoque: linha.estoque,
-    foto: linha.foto,
-    criado_em: linha.criado_em,
-    atualizado_em: linha.atualizado_em,
-  };
+function escaparRegex(texto) {
+  return String(texto).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function removerFoto(caminho) {
@@ -69,50 +55,42 @@ router.post('/', upload.single('foto'), async (req, res) => {
   const precoVenda = calcularPrecoVenda(precoCusto, margem);
   const estoqueNum = Math.max(0, parseInt(estoque, 10) || 0);
 
-  const resultado = await db.run(
-    `INSERT INTO produtos (nome, descricao, preco_custo, margem_percentual, preco_venda, estoque, foto)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    String(nome).trim(),
-    descricao ? String(descricao).trim() : null,
-    precoCusto,
-    margem,
-    precoVenda,
-    estoqueNum,
-    req.file ? '/uploads/' + req.file.filename : null
-  );
+  const produto = await Produto.create({
+    _id: await proximoId('produtos'),
+    nome: String(nome).trim(),
+    descricao: descricao ? String(descricao).trim() : null,
+    preco_custo: precoCusto,
+    margem_percentual: margem,
+    preco_venda: precoVenda,
+    estoque: estoqueNum,
+    foto: req.file ? '/uploads/' + req.file.filename : null,
+    criado_em: agoraLocal(),
+  });
 
-  const produto = await db.get('SELECT * FROM produtos WHERE id = ?', resultado.lastInsertRowid);
-
-  return res.status(201).json(normalizarProduto(produto));
+  return res.status(201).json(produto);
 });
 
 router.get('/', async (req, res) => {
   const { busca } = req.query;
-  let linhas;
+  let filtro = {};
   if (busca) {
-    linhas = await db.all(
-      `SELECT * FROM produtos
-       WHERE nome LIKE ? OR descricao LIKE ?
-       ORDER BY nome`,
-      `%${busca}%`,
-      `%${busca}%`
-    );
-  } else {
-    linhas = await db.all('SELECT * FROM produtos ORDER BY nome');
+    const regex = new RegExp(escaparRegex(busca), 'i');
+    filtro = { $or: [{ nome: regex }, { descricao: regex }] };
   }
-  return res.json(linhas.map(normalizarProduto));
+  const linhas = await Produto.find(filtro).sort({ nome: 1 });
+  return res.json(linhas);
 });
 
 router.get('/:id', async (req, res) => {
-  const produto = await db.get('SELECT * FROM produtos WHERE id = ?', req.params.id);
+  const produto = await Produto.findById(Number(req.params.id));
   if (!produto) {
     return res.status(404).json({ erro: 'Produto não encontrado.' });
   }
-  return res.json(normalizarProduto(produto));
+  return res.json(produto);
 });
 
 router.put('/:id', upload.single('foto'), async (req, res) => {
-  const produto = await db.get('SELECT * FROM produtos WHERE id = ?', req.params.id);
+  const produto = await Produto.findById(Number(req.params.id));
   if (!produto) {
     if (req.file) removerFoto(req.file.path);
     return res.status(404).json({ erro: 'Produto não encontrado.' });
@@ -140,31 +118,27 @@ router.put('/:id', upload.single('foto'), async (req, res) => {
     fotoNova = null;
   }
 
-  await db.run(
-    `UPDATE produtos
-     SET nome = ?, descricao = ?, preco_custo = ?, margem_percentual = ?,
-         preco_venda = ?, estoque = ?, foto = ?, atualizado_em = datetime('now', 'localtime')
-     WHERE id = ?`,
-    novoNome,
-    descricao !== undefined ? String(descricao).trim() || null : produto.descricao,
-    precoCusto,
-    margem,
-    precoVenda,
-    estoqueNum,
-    fotoNova,
-    produto.id
-  );
+  produto.nome = novoNome;
+  produto.descricao = descricao !== undefined ? String(descricao).trim() || null : produto.descricao;
+  produto.preco_custo = precoCusto;
+  produto.margem_percentual = margem;
+  produto.preco_venda = precoVenda;
+  produto.estoque = estoqueNum;
+  produto.foto = fotoNova;
+  produto.atualizado_em = agoraLocal();
+  await produto.save();
 
-  const atualizado = await db.get('SELECT * FROM produtos WHERE id = ?', produto.id);
-  return res.json(normalizarProduto(atualizado));
+  return res.json(produto);
 });
 
 router.delete('/:id', async (req, res) => {
-  const produto = await db.get('SELECT * FROM produtos WHERE id = ?', req.params.id);
+  const id = Number(req.params.id);
+  const produto = await Produto.findById(id);
   if (!produto) {
     return res.status(404).json({ erro: 'Produto não encontrado.' });
   }
-  await db.run('DELETE FROM produtos WHERE id = ?', produto.id);
+  await Produto.deleteOne({ _id: id });
+  await MovimentoEstoque.deleteMany({ produto_id: id });
   removerFoto(produto.foto);
   return res.status(204).send();
 });

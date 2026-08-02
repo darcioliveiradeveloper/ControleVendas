@@ -2,7 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const { db, migrar } = require('./src/db');
+const { conectarBanco } = require('./src/mongoose');
 const autenticar = require('./src/middleware/auth');
 const authRoutes = require('./src/routes/auth.routes');
 const produtosRoutes = require('./src/routes/produtos.routes');
@@ -29,7 +29,7 @@ app.get('/', (req, res) => {
   res.json({
     nome: 'Controle de Vendas - API',
     status: 'ok',
-    banco: db.usandoTurso ? 'turso' : 'sqlite',
+    banco: 'mongodb',
     frontend: 'pasta frontend/ (Vercel)',
     health: '/api/health',
   });
@@ -40,17 +40,20 @@ app.get('/api/me', autenticar, (req, res) => {
 });
 
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', banco: db.usandoTurso ? 'turso' : 'sqlite', etapa: 8 });
+  res.json({ status: 'ok', banco: 'mongodb', etapa: 8 });
 });
 
-migrar()
-  .then(() => {
+async function iniciar() {
+  try {
+    await conectarBanco();
     app.listen(PORT, '0.0.0.0', () => {
       console.log(`Servidor rodando em http://localhost:${PORT}`);
       console.log('Acesse pelo celular na mesma rede usando o IP desta maquina.');
     });
-  })
-  .catch((erro) => {
-    console.error('Falha ao preparar o banco de dados:', erro);
+  } catch (erro) {
+    console.error('Falha ao conectar ao MongoDB:', erro.message);
     process.exit(1);
-  });
+  }
+}
+
+iniciar();

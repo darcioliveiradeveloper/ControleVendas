@@ -1,20 +1,15 @@
 const express = require('express');
-const { db } = require('../db');
+const Cliente = require('../models/Cliente');
 const autenticar = require('../middleware/auth');
+const { proximoId } = require('../ids');
+const { agoraLocal } = require('../utilidades');
 
 const router = express.Router();
 
 router.use(autenticar);
 
-function normalizarCliente(linha) {
-  return {
-    id: linha.id,
-    nome: linha.nome,
-    endereco: linha.endereco,
-    telefone: linha.telefone,
-    criado_em: linha.criado_em,
-    atualizado_em: linha.atualizado_em,
-  };
+function escaparRegex(texto) {
+  return String(texto).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 router.post('/', async (req, res) => {
@@ -24,45 +19,38 @@ router.post('/', async (req, res) => {
     return res.status(400).json({ erro: 'O nome do cliente é obrigatório.' });
   }
 
-  const resultado = await db.run(
-    'INSERT INTO clientes (nome, endereco, telefone) VALUES (?, ?, ?)',
-    String(nome).trim(),
-    endereco ? String(endereco).trim() : null,
-    telefone ? String(telefone).trim() : null
-  );
+  const cliente = await Cliente.create({
+    _id: await proximoId('clientes'),
+    nome: String(nome).trim(),
+    endereco: endereco ? String(endereco).trim() : null,
+    telefone: telefone ? String(telefone).trim() : null,
+    criado_em: agoraLocal(),
+  });
 
-  const cliente = await db.get('SELECT * FROM clientes WHERE id = ?', resultado.lastInsertRowid);
-  return res.status(201).json(normalizarCliente(cliente));
+  return res.status(201).json(cliente);
 });
 
 router.get('/', async (req, res) => {
   const { busca } = req.query;
-  let linhas;
+  let filtro = {};
   if (busca) {
-    linhas = await db.all(
-      `SELECT * FROM clientes
-       WHERE nome LIKE ? OR telefone LIKE ? OR endereco LIKE ?
-       ORDER BY nome`,
-      `%${busca}%`,
-      `%${busca}%`,
-      `%${busca}%`
-    );
-  } else {
-    linhas = await db.all('SELECT * FROM clientes ORDER BY nome');
+    const regex = new RegExp(escaparRegex(busca), 'i');
+    filtro = { $or: [{ nome: regex }, { telefone: regex }, { endereco: regex }] };
   }
-  return res.json(linhas.map(normalizarCliente));
+  const linhas = await Cliente.find(filtro).sort({ nome: 1 });
+  return res.json(linhas);
 });
 
 router.get('/:id', async (req, res) => {
-  const cliente = await db.get('SELECT * FROM clientes WHERE id = ?', req.params.id);
+  const cliente = await Cliente.findById(Number(req.params.id));
   if (!cliente) {
     return res.status(404).json({ erro: 'Cliente não encontrado.' });
   }
-  return res.json(normalizarCliente(cliente));
+  return res.json(cliente);
 });
 
 router.put('/:id', async (req, res) => {
-  const cliente = await db.get('SELECT * FROM clientes WHERE id = ?', req.params.id);
+  const cliente = await Cliente.findById(Number(req.params.id));
   if (!cliente) {
     return res.status(404).json({ erro: 'Cliente não encontrado.' });
   }
@@ -74,26 +62,22 @@ router.put('/:id', async (req, res) => {
     return res.status(400).json({ erro: 'O nome do cliente é obrigatório.' });
   }
 
-  await db.run(
-    `UPDATE clientes
-     SET nome = ?, endereco = ?, telefone = ?, atualizado_em = datetime('now', 'localtime')
-     WHERE id = ?`,
-    novoNome,
-    endereco !== undefined ? String(endereco).trim() || null : cliente.endereco,
-    telefone !== undefined ? String(telefone).trim() || null : cliente.telefone,
-    cliente.id
-  );
+  cliente.nome = novoNome;
+  cliente.endereco = endereco !== undefined ? String(endereco).trim() || null : cliente.endereco;
+  cliente.telefone = telefone !== undefined ? String(telefone).trim() || null : cliente.telefone;
+  cliente.atualizado_em = agoraLocal();
+  await cliente.save();
 
-  const atualizado = await db.get('SELECT * FROM clientes WHERE id = ?', cliente.id);
-  return res.json(normalizarCliente(atualizado));
+  return res.json(cliente);
 });
 
 router.delete('/:id', async (req, res) => {
-  const cliente = await db.get('SELECT * FROM clientes WHERE id = ?', req.params.id);
+  const id = Number(req.params.id);
+  const cliente = await Cliente.findById(id);
   if (!cliente) {
     return res.status(404).json({ erro: 'Cliente não encontrado.' });
   }
-  await db.run('DELETE FROM clientes WHERE id = ?', cliente.id);
+  await Cliente.deleteOne({ _id: id });
   return res.status(204).send();
 });
 
