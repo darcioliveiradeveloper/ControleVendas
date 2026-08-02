@@ -13,10 +13,12 @@ const relatoriosRoutes = require('./src/routes/relatorios.routes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const frontendDir = path.join(__dirname, '..', 'frontend');
 
 app.use(cors());
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use(express.static(frontendDir));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/produtos', produtosRoutes);
@@ -26,13 +28,7 @@ app.use('/api/vendas', vendasRoutes);
 app.use('/api/relatorios', relatoriosRoutes);
 
 app.get('/', (req, res) => {
-  res.json({
-    nome: 'Controle de Vendas - API',
-    status: 'ok',
-    banco: 'mongodb',
-    frontend: 'pasta frontend/ (Vercel)',
-    health: '/api/health',
-  });
+  res.sendFile(path.join(frontendDir, 'index.html'));
 });
 
 app.get('/api/me', autenticar, (req, res) => {
@@ -41,6 +37,13 @@ app.get('/api/me', autenticar, (req, res) => {
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', banco: 'mongodb', etapa: 8 });
+});
+
+app.use((req, res) => {
+  if (req.method === 'GET' && !req.path.startsWith('/api/') && !req.path.startsWith('/uploads/')) {
+    return res.sendFile(path.join(frontendDir, 'index.html'));
+  }
+  res.status(404).json({ erro: 'Rota não encontrada.' });
 });
 
 async function iniciar() {

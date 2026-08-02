@@ -1,4 +1,4 @@
-const API_PADRAO = 'http://localhost:3000';
+const API_PADRAO = '';
 
 function obterApiUrl() {
   return localStorage.getItem('apiUrl') || API_PADRAO;
