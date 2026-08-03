@@ -31,7 +31,8 @@ router.post('/', async (req, res) => {
   }
 
   const tipoVenda = tipo === 'encomenda' ? 'encomenda' : 'venda';
-  const forma = forma_pagamento === 'parcelado' ? 'parcelado' : 'a_vista';
+  const formasValidas = ['a_vista', 'pix', 'dinheiro', 'cartao', 'parcelado'];
+  const forma = formasValidas.includes(forma_pagamento) ? forma_pagamento : 'a_vista';
 
   const itensCarregados = [];
   for (const item of itens) {
@@ -60,7 +61,7 @@ router.post('/', async (req, res) => {
   );
 
   let listaParcelas;
-  if (forma === 'a_vista') {
+  if (forma !== 'parcelado') {
     const venc = data_primeira_parcela || hoje();
     listaParcelas = [{ numero: 1, valor: total, data_vencimento: venc, pago: pago ? true : false }];
   } else {

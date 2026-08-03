@@ -2,6 +2,15 @@ registrarTela('produtos', carregarTelaProdutos);
 
 let produtosAtuais = [];
 
+const SVG_SEM_FOTO = `
+  <svg viewBox="0 0 100 100" width="64" height="64" aria-hidden="true">
+    <circle cx="50" cy="37" r="13" fill="#e8b7c9" />
+    <path d="M28 80 a22 22 0 0 1 44 0 z" fill="#e8b7c9" />
+    <circle cx="50" cy="37" r="21" fill="none" stroke="#d9a3bb" stroke-width="2" opacity="0.6" />
+    <path d="M50 5 l3.2 7.5 7.5 3.2 -7.5 3.2 -3.2 7.5 -3.2 -7.5 -7.5 -3.2 7.5 -3.2 z" fill="#e75480" opacity="0.85" />
+  </svg>
+`;
+
 async function carregarTelaProdutos() {
   const tela = document.getElementById('tela-produtos');
   tela.innerHTML = `
@@ -51,11 +60,12 @@ function renderProdutos() {
       return `
         <div class="produto-card">
           <div class="produto-foto">
-            ${foto ? `<img src="${foto}" alt="${p.nome}" />` : 'Sem foto'}
+            ${foto ? `<img src="${foto}" alt="${p.nome}" />` : `<span class="produto-sem-foto">${SVG_SEM_FOTO}</span>`}
           </div>
           <div class="produto-info">
             <span class="produto-nome">${p.nome}</span>
             ${p.descricao ? `<span class="produto-desc">${p.descricao}</span>` : ''}
+            ${p.observacoes ? `<span class="produto-desc">📌 ${p.observacoes}</span>` : ''}
             <span class="produto-preco">${formatarMoeda(p.preco_venda)}</span>
             <span class="produto-estoque ${baixo ? 'estoque-baixo' : ''}">Estoque: ${p.estoque}</span>
           </div>
@@ -91,6 +101,10 @@ function abrirFormProduto(id) {
             <textarea name="descricao" rows="2">${produto ? (produto.descricao || '') : ''}</textarea>
           </div>
           <div class="field">
+            <label>Observações</label>
+            <textarea name="observacoes" rows="2" placeholder="Ex.: vendido em kit, validade, fornecedor...">${produto ? (produto.observacoes || '') : ''}</textarea>
+          </div>
+          <div class="field">
             <label>Preço de custo (R$)</label>
             <input name="preco_custo" type="number" step="0.01" min="0" required value="${produto ? produto.preco_custo : '0'}" />
           </div>
@@ -109,7 +123,7 @@ function abrirFormProduto(id) {
           <div class="campo-foto">
             <label>Foto</label>
             <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
-              <div class="preview-foto" id="preview-foto">${produto && produto.foto ? `<img src="${urlFoto(produto.foto)}" />` : 'Sem foto'}</div>
+              <div class="preview-foto" id="preview-foto">${produto && produto.foto ? `<img src="${urlFoto(produto.foto)}" />` : `<span class="produto-sem-foto">${SVG_SEM_FOTO}</span>`}</div>
               <div style="display:flex;flex-direction:column;gap:8px">
                 <input name="foto" type="file" accept="image/*" />
                 ${produto && produto.foto ? `<label class="checkbox-label"><input type="checkbox" name="manter_foto" checked /> Manter foto atual</label>` : ''}

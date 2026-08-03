@@ -43,7 +43,7 @@ function removerFoto(caminho) {
 router.use(autenticar);
 
 router.post('/', upload.single('foto'), async (req, res) => {
-  const { nome, descricao, preco_custo, margem_percentual, estoque } = req.body || {};
+  const { nome, descricao, observacoes, preco_custo, margem_percentual, estoque } = req.body || {};
 
   if (!nome || !String(nome).trim()) {
     if (req.file) removerFoto(req.file.path);
@@ -59,6 +59,7 @@ router.post('/', upload.single('foto'), async (req, res) => {
     _id: await proximoId('produtos'),
     nome: String(nome).trim(),
     descricao: descricao ? String(descricao).trim() : null,
+    observacoes: observacoes ? String(observacoes).trim() : null,
     preco_custo: precoCusto,
     margem_percentual: margem,
     preco_venda: precoVenda,
@@ -96,7 +97,7 @@ router.put('/:id', upload.single('foto'), async (req, res) => {
     return res.status(404).json({ erro: 'Produto não encontrado.' });
   }
 
-  const { nome, descricao, preco_custo, margem_percentual, estoque, manter_foto } = req.body || {};
+  const { nome, descricao, observacoes, preco_custo, margem_percentual, estoque, manter_foto } = req.body || {};
 
   const novoNome = nome !== undefined ? String(nome).trim() : produto.nome;
   if (!novoNome) {
@@ -120,6 +121,7 @@ router.put('/:id', upload.single('foto'), async (req, res) => {
 
   produto.nome = novoNome;
   produto.descricao = descricao !== undefined ? String(descricao).trim() || null : produto.descricao;
+  produto.observacoes = observacoes !== undefined ? String(observacoes).trim() || null : produto.observacoes;
   produto.preco_custo = precoCusto;
   produto.margem_percentual = margem;
   produto.preco_venda = precoVenda;

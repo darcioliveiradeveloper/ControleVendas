@@ -3,6 +3,7 @@ const Venda = require('../models/Venda');
 const MovimentoEstoque = require('../models/MovimentoEstoque');
 const Cliente = require('../models/Cliente');
 const Produto = require('../models/Produto');
+const Despesa = require('../models/Despesa');
 const autenticar = require('../middleware/auth');
 const { hoje, arredondar, intervaloDia } = require('../utilidades');
 
@@ -62,6 +63,42 @@ async function consultarResumo(inicio, fim) {
     { $group: { _id: null, quantidade: { $sum: 1 }, valor: { $sum: '$parcelas.valor' } } },
   ]);
 
+  const matchDespesas = {};
+  if (temPeriodo) matchDespesas.data = { $gte: inicio, $lte: fim };
+  const despesas = await Despesa.aggregate([
+    { $match: matchDespesas },
+    { $group: { _id: null, quantidade: { $sum: 1 }, total: { $sum: '$valor' } } },
+  ]);
+
+  const topProdutos = await Venda.aggregate([
+    { $match: matchVendas },
+    { $unwind: '$itens' },
+    {
+      $group: {
+        _id: '$itens.produto_nome',
+        quantidade: { $sum: '$itens.quantidade' },
+        total: { $sum: { $multiply: ['$itens.preco_unitario', '$itens.quantidade'] } },
+      },
+    },
+    { $sort: { quantidade: -1, total: -1 } },
+    { $limit: 5 },
+    { $project: { _id: 0, nome: '$_id', quantidade: 1, total: 1 } },
+  ]);
+
+  const topClientes = await Venda.aggregate([
+    { $match: matchVendas },
+    {
+      $group: {
+        _id: { $ifNull: ['$cliente_nome', 'Cliente avulso'] },
+        vendas: { $sum: 1 },
+        total: { $sum: '$total' },
+      },
+    },
+    { $sort: { total: -1 } },
+    { $limit: 5 },
+    { $project: { _id: 0, nome: '$_id', vendas: 1, total: 1 } },
+  ]);
+
   const [clientes, produtos] = await Promise.all([
     Cliente.countDocuments(),
     Produto.countDocuments(),
@@ -70,22 +107,34 @@ async function consultarResumo(inicio, fim) {
   const v = vendas[0] || {};
   const l = lucro[0] || {};
   const g = gastos[0] || {};
+  const d = despesas[0] || {};
   const pa = parcelasAbertas[0] || {};
   const pv = parcelasVencidas[0] || {};
+
+  const lucroVendas = arredondar(l.lucro || 0);
+  const totalGastos = arredondar(g.total || 0);
+  const totalDespesas = arredondar(d.total || 0);
 
   return {
     periodo: temPeriodo ? { inicio, fim } : null,
     vendas: {
       quantidade: v.quantidade || 0,
       receita: arredondar(v.receita || 0),
-      lucro: arredondar(l.lucro || 0),
+      lucro: lucroVendas,
       custo_vendido: arredondar(l.custo_vendido || 0),
     },
     encomendas_abertas: encomendas,
     gastos: {
       quantidade_movimentos: g.quantidade || 0,
-      total: arredondar(g.total || 0),
+      total: totalGastos,
     },
+    despesas: {
+      quantidade: d.quantidade || 0,
+      total: totalDespesas,
+    },
+    lucro_liquido: arredondar(lucroVendas - totalGastos - totalDespesas),
+    top_produtos: topProdutos,
+    top_clientes: topClientes,
     parcelas_abertas: {
       quantidade: pa.quantidade || 0,
       valor: arredondar(pa.valor || 0),
@@ -168,6 +217,20 @@ router.get('/gastos', async (req, res) => {
   if (intervalo) filtro.criado_em = { $gte: intervalo.inicio, $lte: intervalo.fim };
 
   const linhas = await MovimentoEstoque.find(filtro).sort({ _id: -1 }).limit(200);
+  return res.json(linhas);
+});
+
+router.get('/despesas', async (req, res) => {
+  const { inicio, fim } = req.query;
+  if (periodoValido(inicio, fim)) {
+    return res.status(400).json({ erro: 'A data inicial não pode ser maior que a final.' });
+  }
+
+  const filtro = {};
+  const intervalo = intervaloDia(inicio, fim);
+  if (intervalo) filtro.data = { $gte: inicio, $lte: fim };
+
+  const linhas = await Despesa.find(filtro).sort({ data: -1, _id: -1 }).limit(200);
   return res.json(linhas);
 });
 

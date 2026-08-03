@@ -3,12 +3,11 @@ const mongoose = require('mongoose');
 const schema = new mongoose.Schema(
   {
     _id: { type: Number },
-    nome: { type: String, required: true, trim: true },
-    endereco: { type: String, default: null },
-    telefone: { type: String, default: null },
-    whatsapp: { type: String, default: null },
+    descricao: { type: String, required: true, trim: true },
+    valor: { type: Number, required: true },
+    categoria: { type: String, default: null },
+    data: { type: String, required: true },
     criado_em: { type: String, default: null },
-    atualizado_em: { type: String, default: null },
   },
   {
     id: false,
@@ -23,6 +22,6 @@ const schema = new mongoose.Schema(
   }
 );
 
-schema.index({ nome: 1 });
+schema.index({ data: 1 });
 
-module.exports = mongoose.model('Cliente', schema);
+module.exports = mongoose.model('Despesa', schema);

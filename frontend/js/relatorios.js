@@ -24,7 +24,8 @@ async function carregarTelaRelatorios() {
       <div class="filtros" style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn small secondary" data-tipo="vendas">Vendas</button>
         <button class="btn small secondary" data-tipo="parcelas">Parcelas</button>
-        <button class="btn small secondary" data-tipo="gastos">Gastos</button>
+        <button class="btn small secondary" data-tipo="gastos">Gastos (estoque)</button>
+        <button class="btn small secondary" data-tipo="despesas">Despesas</button>
       </div>
       <div id="conteudo-relatorio" style="margin-top:16px"></div>
     </div>
@@ -66,6 +67,9 @@ async function carregarRelatorio() {
     } else if (relatorioTipo === 'parcelas') {
       const dados = await requisicaoJSON(`${API()}/relatorios/parcelas?${params}`, 'GET', null, obterToken());
       conteudo.innerHTML = renderParcelasRelatorio(dados);
+    } else if (relatorioTipo === 'despesas') {
+      const dados = await requisicaoJSON(`${API()}/relatorios/despesas?${params}`, 'GET', null, obterToken());
+      conteudo.innerHTML = renderDespesasRelatorio(dados);
     } else {
       const dados = await requisicaoJSON(`${API()}/relatorios/gastos?${params}`, 'GET', null, obterToken());
       conteudo.innerHTML = renderGastosRelatorio(dados);
@@ -160,6 +164,48 @@ function renderParcelasRelatorio(parcelas) {
                   )
                   .join('')
               : `<tr><td colspan="5" class="vazio">Nenhuma parcela em aberto.</td></tr>`
+          }
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function renderDespesasRelatorio(despesas) {
+  const total = despesas.reduce((s, d) => s + Number(d.valor), 0);
+
+  return `
+    <div class="cards-grid" style="margin-bottom:16px">
+      <div class="card">
+        <span class="card-rotulo">Despesas</span>
+        <span class="card-valor">${despesas.length}</span>
+      </div>
+      <div class="card">
+        <span class="card-rotulo">Total de despesas</span>
+        <span class="card-valor gasto">${formatarMoeda(total)}</span>
+      </div>
+    </div>
+    <div class="table-wrapper">
+      <table class="tabela">
+        <thead>
+          <tr><th>Data</th><th>Descrição</th><th>Categoria</th><th>Valor</th></tr>
+        </thead>
+        <tbody>
+          ${
+            despesas.length
+              ? despesas
+                  .map(
+                    (d) => `
+                      <tr>
+                        <td class="data">${formatarData(d.data)}</td>
+                        <td>${d.descricao}</td>
+                        <td>${d.categoria || '—'}</td>
+                        <td>${formatarMoeda(d.valor)}</td>
+                      </tr>
+                    `
+                  )
+                  .join('')
+              : `<tr><td colspan="4" class="vazio">Nenhuma despesa no período.</td></tr>`
           }
         </tbody>
       </table>

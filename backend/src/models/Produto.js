@@ -5,6 +5,7 @@ const schema = new mongoose.Schema(
     _id: { type: Number },
     nome: { type: String, required: true, trim: true },
     descricao: { type: String, default: null },
+    observacoes: { type: String, default: null },
     preco_custo: { type: Number, default: 0 },
     margem_percentual: { type: Number, default: 0 },
     preco_venda: { type: Number, default: 0 },

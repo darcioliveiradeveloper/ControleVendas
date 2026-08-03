@@ -28,7 +28,7 @@ const schema = new mongoose.Schema(
     cliente_id: { type: Number, default: null },
     cliente_nome: { type: String, default: null },
     tipo: { type: String, enum: ['venda', 'encomenda'], default: 'venda' },
-    forma_pagamento: { type: String, enum: ['a_vista', 'parcelado'], default: 'a_vista' },
+    forma_pagamento: { type: String, enum: ['a_vista', 'pix', 'dinheiro', 'cartao', 'parcelado'], default: 'a_vista' },
     total: { type: Number, default: 0 },
     status: { type: String, enum: ['ativa', 'cancelada'], default: 'ativa' },
     itens: { type: [itemSchema], default: [] },

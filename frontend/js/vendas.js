@@ -6,6 +6,14 @@ let carrinho = [];
 let vendasAtuais = [];
 let vendaDetalheAtual = null;
 
+const NOME_PAGAMENTO = {
+  a_vista: 'À vista',
+  pix: 'Pix',
+  dinheiro: 'Dinheiro',
+  cartao: 'Cartão',
+  parcelado: 'Parcelado',
+};
+
 async function carregarTelaVendas() {
   const tela = document.getElementById('tela-vendas');
   tela.innerHTML = `
@@ -57,10 +65,13 @@ async function carregarTelaVendas() {
             </div>
             <div class="field">
               <label>Forma de pagamento</label>
-              <select name="forma_pagamento">
-                <option value="a_vista">À vista</option>
-                <option value="parcelado">Parcelado</option>
-              </select>
+              <div class="pagamento-grid">
+                <button type="button" class="pagamento-btn" data-forma="pix">Pix</button>
+                <button type="button" class="pagamento-btn" data-forma="dinheiro">Dinheiro</button>
+                <button type="button" class="pagamento-btn" data-forma="cartao">Cartão</button>
+                <button type="button" class="pagamento-btn" data-forma="parcelado">Parcelado</button>
+              </div>
+              <input type="hidden" name="forma_pagamento" value="pix" />
             </div>
             <div class="field hidden" id="campo-parcelas">
               <label>Número de parcelas</label>
@@ -126,11 +137,21 @@ async function carregarTelaVendas() {
   });
 
   const formFinalizar = tela.querySelector('#form-finalizar');
-  const selectForma = formFinalizar.elements.forma_pagamento;
+  const campoForma = formFinalizar.elements.forma_pagamento;
   const campoSeparacao = tela.querySelector('#campo-parcelas');
-  selectForma.addEventListener('change', () => {
-    campoSeparacao.classList.toggle('hidden', selectForma.value !== 'parcelado');
-  });
+  const botoesPagamento = tela.querySelectorAll('.pagamento-btn');
+
+  const selecionarForma = (forma) => {
+    campoForma.value = forma;
+    botoesPagamento.forEach((b) => {
+      const ativo = b.dataset.forma === forma;
+      b.classList.toggle('active', ativo);
+      b.setAttribute('aria-pressed', ativo ? 'true' : 'false');
+    });
+    campoSeparacao.classList.toggle('hidden', forma !== 'parcelado');
+  };
+  botoesPagamento.forEach((b) => b.addEventListener('click', () => selecionarForma(b.dataset.forma)));
+  selecionarForma('pix');
   formFinalizar.addEventListener('submit', confirmarVenda);
 
   tela.querySelector('#busca-venda').addEventListener('input', (e) => {
@@ -330,7 +351,7 @@ function renderVendas() {
           <td class="data">${formatarData(v.criado_em)}</td>
           <td>${v.cliente_nome || 'Avulso'}</td>
           <td>${v.tipo === 'encomenda' ? 'Encomenda' : 'Venda'}</td>
-          <td>${v.forma_pagamento === 'parcelado' ? `Parcelado (${v.parcelas_pagas}/${v.total_parcelas})` : 'À vista'}</td>
+          <td>${v.forma_pagamento === 'parcelado' ? `Parcelado (${v.parcelas_pagas}/${v.total_parcelas})` : (NOME_PAGAMENTO[v.forma_pagamento] || 'À vista')}</td>
           <td><strong>${formatarMoeda(v.total)}</strong></td>
           <td>${statusBadge}</td>
           <td class="acoes">
@@ -366,7 +387,7 @@ function renderDetalheVenda() {
         <div><div class="rotulo">Data</div><div class="valor">${formatarData(v.criado_em)}</div></div>
         <div><div class="rotulo">Cliente</div><div class="valor">${v.cliente_nome || 'Avulso'}</div></div>
         <div><div class="rotulo">Tipo</div><div class="valor">${v.tipo === 'encomenda' ? 'Encomenda' : 'Venda'}</div></div>
-        <div><div class="rotulo">Pagamento</div><div class="valor">${v.forma_pagamento === 'parcelado' ? 'Parcelado' : 'À vista'}</div></div>
+        <div><div class="rotulo">Pagamento</div><div class="valor">${NOME_PAGAMENTO[v.forma_pagamento] || 'À vista'}</div></div>
         <div><div class="rotulo">Status</div><div class="valor">${v.status === 'cancelada' ? 'Cancelada' : v.quitada ? 'Quitada' : 'Ativa'}</div></div>
       </div>
 

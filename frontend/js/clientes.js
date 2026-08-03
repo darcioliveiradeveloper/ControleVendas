@@ -50,28 +50,38 @@ async function buscarClientes(texto) {
   }, 300);
 }
 
+function linkWhatsApp(numero) {
+  const digitos = String(numero || '').replace(/\D/g, '');
+  if (digitos.length < 10) return null;
+  const internacional = digitos.length <= 11 ? '55' + digitos : digitos;
+  return 'https://wa.me/' + internacional;
+}
+
 function renderClientes() {
   const corpo = document.getElementById('corpo-clientes');
   if (!clientesAtuais.length) {
-    corpo.innerHTML = `<tr><td colspan="5" class="vazio">Nenhum cliente cadastrado.</td></tr>`;
+    corpo.innerHTML = `<tr><td colspan="6" class="vazio">Nenhum cliente cadastrado.</td></tr>`;
     return;
   }
 
   corpo.innerHTML = clientesAtuais
-    .map(
-      (c) => `
+    .map((c) => {
+      const zap = linkWhatsApp(c.whatsapp || c.telefone);
+      return `
         <tr>
           <td>${c.nome}</td>
+          <td>${c.whatsapp || '—'}</td>
           <td>${c.telefone || '—'}</td>
           <td>${c.endereco || '—'}</td>
           <td class="data">${formatarData(c.criado_em)}</td>
           <td class="acoes">
+            ${zap ? `<button class="btn small" style="background:#dcfce7;color:var(--sucesso)" onclick="window.open('${zap}', '_blank')">WhatsApp</button>` : ''}
             <button class="btn small secondary" onclick="abrirFormCliente(${c.id})">Editar</button>
             <button class="btn small" style="background:#fee2e2;color:var(--erro)" onclick="excluirCliente(${c.id})">Excluir</button>
           </td>
         </tr>
-      `
-    )
+      `;
+    })
     .join('');
 }
 
@@ -91,6 +101,10 @@ function abrirFormCliente(id) {
           <div class="field">
             <label>Nome *</label>
             <input name="nome" type="text" required value="${cliente ? (cliente.nome || '') : ''}" />
+          </div>
+          <div class="field">
+            <label>WhatsApp</label>
+            <input name="whatsapp" type="tel" placeholder="(11) 91234-5678" value="${cliente ? (cliente.whatsapp || '') : ''}" />
           </div>
           <div class="field">
             <label>Telefone</label>
@@ -122,6 +136,7 @@ function abrirFormCliente(id) {
     const f = e.target;
     const corpo = {
       nome: f.nome.value,
+      whatsapp: f.whatsapp.value || null,
       telefone: f.telefone.value || null,
       endereco: f.endereco.value || null,
     };

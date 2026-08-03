@@ -905,6 +905,71 @@ select:focus {
   color: var(--erro);
 }
 
+/* ---- Pagamento rápido (vendas) ---- */
+
+.pagamento-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.pagamento-btn {
+  padding: 10px 8px;
+  border: 1.5px solid var(--borda);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--texto);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+
+.pagamento-btn:hover {
+  border-color: var(--primaria);
+}
+
+.pagamento-btn.active {
+  background: var(--primaria);
+  border-color: var(--primaria);
+  color: #fff;
+  box-shadow: 0 6px 14px -6px rgba(231, 84, 128, 0.5);
+}
+
+/* ---- Foto padrão do produto ---- */
+
+.produto-sem-foto {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #fdf2f7, #f3ecfa);
+}
+
+.produto-sem-foto svg {
+  display: block;
+}
+
+/* ---- Resumo: painéis de top ---- */
+
+.resumo-top {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+/* ---- Despesas: linha de total ---- */
+
+.linha-total td {
+  border-top: 2px solid var(--borda);
+  border-bottom: none;
+  background: #fbf2f7;
+  color: var(--texto);
+}
+
 .filtro-periodo {
   display: flex;
   align-items: flex-end;
@@ -949,5 +1014,9 @@ select:focus {
 
   .topbar {
     padding: 14px 16px;
+  }
+
+  .resumo-top {
+    grid-template-columns: 1fr;
   }
 }

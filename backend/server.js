@@ -10,6 +10,7 @@ const estoqueRoutes = require('./src/routes/estoque.routes');
 const clientesRoutes = require('./src/routes/clientes.routes');
 const vendasRoutes = require('./src/routes/vendas.routes');
 const relatoriosRoutes = require('./src/routes/relatorios.routes');
+const despesasRoutes = require('./src/routes/despesas.routes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -26,6 +27,7 @@ app.use('/api/estoque', estoqueRoutes);
 app.use('/api/clientes', clientesRoutes);
 app.use('/api/vendas', vendasRoutes);
 app.use('/api/relatorios', relatoriosRoutes);
+app.use('/api/despesas', despesasRoutes);
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(frontendDir, 'index.html'));
