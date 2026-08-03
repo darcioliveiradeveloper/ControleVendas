@@ -13,7 +13,7 @@ function escaparRegex(texto) {
 }
 
 router.post('/', async (req, res) => {
-  const { nome, endereco, telefone, whatsapp } = req.body || {};
+  const { nome, endereco, telefone, whatsapp, email, data_nascimento } = req.body || {};
 
   if (!nome || !String(nome).trim()) {
     return res.status(400).json({ erro: 'O nome do cliente é obrigatório.' });
@@ -25,6 +25,8 @@ router.post('/', async (req, res) => {
     endereco: endereco ? String(endereco).trim() : null,
     telefone: telefone ? String(telefone).trim() : null,
     whatsapp: whatsapp ? String(whatsapp).trim() : null,
+    email: email ? String(email).trim() : null,
+    data_nascimento: data_nascimento ? String(data_nascimento).trim() : null,
     criado_em: agoraLocal(),
   });
 
@@ -36,7 +38,7 @@ router.get('/', async (req, res) => {
   let filtro = {};
   if (busca) {
     const regex = new RegExp(escaparRegex(busca), 'i');
-    filtro = { $or: [{ nome: regex }, { telefone: regex }, { whatsapp: regex }, { endereco: regex }] };
+    filtro = { $or: [{ nome: regex }, { telefone: regex }, { whatsapp: regex }, { email: regex }, { endereco: regex }] };
   }
   const linhas = await Cliente.find(filtro).sort({ nome: 1 });
   return res.json(linhas);
@@ -56,17 +58,27 @@ router.put('/:id', async (req, res) => {
     return res.status(404).json({ erro: 'Cliente não encontrado.' });
   }
 
-  const { nome, endereco, telefone, whatsapp } = req.body || {};
+  const { nome, endereco, telefone, whatsapp, email, data_nascimento } = req.body || {};
 
   const novoNome = nome !== undefined ? String(nome).trim() : cliente.nome;
   if (!novoNome) {
     return res.status(400).json({ erro: 'O nome do cliente é obrigatório.' });
   }
 
+  const limpar = (v) => (v === undefined ? undefined : v === null ? null : String(v).trim() || null);
+
+  const novoEndereco = limpar(endereco);
+  const novoTelefone = limpar(telefone);
+  const novoWhatsapp = limpar(whatsapp);
+  const novoEmail = limpar(email);
+  const novoNascimento = limpar(data_nascimento);
+
   cliente.nome = novoNome;
-  cliente.endereco = endereco !== undefined ? String(endereco).trim() || null : cliente.endereco;
-  cliente.telefone = telefone !== undefined ? String(telefone).trim() || null : cliente.telefone;
-  cliente.whatsapp = whatsapp !== undefined ? String(whatsapp).trim() || null : cliente.whatsapp;
+  if (novoEndereco !== undefined) cliente.endereco = novoEndereco;
+  if (novoTelefone !== undefined) cliente.telefone = novoTelefone;
+  if (novoWhatsapp !== undefined) cliente.whatsapp = novoWhatsapp;
+  if (novoEmail !== undefined) cliente.email = novoEmail;
+  if (novoNascimento !== undefined) cliente.data_nascimento = novoNascimento;
   cliente.atualizado_em = agoraLocal();
   await cliente.save();
 

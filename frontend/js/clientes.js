@@ -18,8 +18,9 @@ async function carregarTelaClientes() {
           <thead>
             <tr>
               <th>Nome</th>
-              <th>WhatsApp</th>
-              <th>Telefone</th>
+              <th>Contato</th>
+              <th>Email</th>
+              <th>Nascimento</th>
               <th>Endereço</th>
               <th>Pontos</th>
               <th>Cadastrado em</th>
@@ -62,18 +63,24 @@ function linkWhatsApp(numero) {
 function renderClientes() {
   const corpo = document.getElementById('corpo-clientes');
   if (!clientesAtuais.length) {
-    corpo.innerHTML = `<tr><td colspan="7" class="vazio">Nenhum cliente cadastrado.</td></tr>`;
+    corpo.innerHTML = `<tr><td colspan="8" class="vazio">Nenhum cliente cadastrado.</td></tr>`;
     return;
   }
 
   corpo.innerHTML = clientesAtuais
     .map((c) => {
+      const contato = c.whatsapp || c.telefone || '—';
+      const ehWhats = !!c.whatsapp;
       const zap = linkWhatsApp(c.whatsapp || c.telefone);
       return `
         <tr>
           <td>${c.nome}</td>
-          <td>${c.whatsapp || '—'}</td>
-          <td>${c.telefone || '—'}</td>
+          <td>
+            ${contato}
+            ${ehWhats ? ' <span class="badge" style="background:var(--sucesso-suave);color:var(--sucesso)">WhatsApp</span>' : ''}
+          </td>
+          <td>${c.email || '—'}</td>
+          <td class="data">${formatarData(c.data_nascimento)}</td>
           <td>${c.endereco || '—'}</td>
           <td><span class="badge" style="background:var(--sucesso-suave);color:var(--sucesso)">${c.pontos || 0} pts</span></td>
           <td class="data">${formatarData(c.criado_em)}</td>
@@ -90,6 +97,8 @@ function renderClientes() {
 
 function abrirFormCliente(id) {
   const cliente = id ? clientesAtuais.find((c) => c.id === id) : null;
+  const contatoInicial = cliente ? (cliente.whatsapp || cliente.telefone || '') : '';
+  const tipoContatoInicial = cliente && cliente.whatsapp ? 'whatsapp' : cliente && cliente.telefone ? 'telefone' : 'whatsapp';
 
   const modal = document.createElement('div');
   modal.className = 'modal';
@@ -106,12 +115,22 @@ function abrirFormCliente(id) {
             <input name="nome" type="text" required value="${cliente ? (cliente.nome || '') : ''}" />
           </div>
           <div class="field">
-            <label>WhatsApp</label>
-            <input name="whatsapp" type="tel" placeholder="(11) 91234-5678" value="${cliente ? (cliente.whatsapp || '') : ''}" />
+            <label id="label-contato">WhatsApp</label>
+            <div class="contato-linha">
+              <select name="tipo_contato">
+                <option value="whatsapp" ${tipoContatoInicial === 'whatsapp' ? 'selected' : ''}>WhatsApp</option>
+                <option value="telefone" ${tipoContatoInicial === 'telefone' ? 'selected' : ''}>Telefone</option>
+              </select>
+              <input name="contato" type="tel" placeholder="(11) 91234-5678" value="${contatoInicial}" />
+            </div>
           </div>
           <div class="field">
-            <label>Telefone</label>
-            <input name="telefone" type="text" value="${cliente ? (cliente.telefone || '') : ''}" />
+            <label>Email</label>
+            <input name="email" type="email" placeholder="cliente@email.com" value="${cliente ? (cliente.email || '') : ''}" />
+          </div>
+          <div class="field">
+            <label>Data de nascimento</label>
+            <input name="data_nascimento" type="date" value="${cliente ? (cliente.data_nascimento || '') : ''}" />
           </div>
           <div class="field">
             <label>Endereço</label>
@@ -135,15 +154,35 @@ function abrirFormCliente(id) {
     if (e.target === modal) fechar();
   });
 
+  const selectTipo = modal.querySelector('select[name="tipo_contato"]');
+  const inputContato = modal.querySelector('input[name="contato"]');
+  const labelContato = modal.querySelector('#label-contato');
+  const atualizarContato = () => {
+    const ehTelefone = selectTipo.value === 'telefone';
+    labelContato.textContent = ehTelefone ? 'Telefone' : 'WhatsApp';
+    inputContato.placeholder = ehTelefone ? 'Ex.: (11) 3456-7890' : '(11) 91234-5678';
+  };
+  selectTipo.addEventListener('change', atualizarContato);
+  atualizarContato();
+
   modal.querySelector('#form-cliente').addEventListener('submit', async (e) => {
     e.preventDefault();
     const f = e.target;
+    const tipoContato = f.tipo_contato.value;
+    const contato = f.contato.value.trim();
     const corpo = {
       nome: f.nome.value,
-      whatsapp: f.whatsapp.value || null,
-      telefone: f.telefone.value || null,
+      email: f.email.value || null,
+      data_nascimento: f.data_nascimento.value || null,
       endereco: f.endereco.value || null,
     };
+    if (tipoContato === 'telefone') {
+      corpo.telefone = contato || null;
+      corpo.whatsapp = null;
+    } else {
+      corpo.whatsapp = contato || null;
+      corpo.telefone = null;
+    }
     try {
       if (cliente) {
         await requisicaoJSON(`${API()}/clientes/${cliente.id}`, 'PUT', corpo, obterToken());
