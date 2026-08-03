@@ -71,13 +71,15 @@ function renderClientes() {
     .map((c) => {
       const contato = c.whatsapp || c.telefone || '—';
       const ehWhats = !!c.whatsapp;
-      const zap = linkWhatsApp(c.whatsapp || c.telefone);
+      const zap = c.whatsapp ? linkWhatsApp(c.whatsapp) : null;
       return `
         <tr>
           <td>${c.nome}</td>
           <td>
             ${contato}
-            ${ehWhats ? ' <span class="badge" style="background:var(--sucesso-suave);color:var(--sucesso)">WhatsApp</span>' : ''}
+            ${ehWhats && zap
+              ? `<a class="badge zap-link" href="${zap}" target="_blank" rel="noopener" title="Chamar no WhatsApp">WhatsApp</a>`
+              : ''}
           </td>
           <td>${c.email || '—'}</td>
           <td class="data">${formatarData(c.data_nascimento)}</td>
@@ -85,7 +87,6 @@ function renderClientes() {
           <td><span class="badge" style="background:var(--sucesso-suave);color:var(--sucesso)">${c.pontos || 0} pts</span></td>
           <td class="data">${formatarData(c.criado_em)}</td>
           <td class="acoes">
-            ${zap ? `<button class="btn small" style="background:#dcfce7;color:var(--sucesso)" onclick="window.open('${zap}', '_blank')">WhatsApp</button>` : ''}
             <button class="btn small secondary" onclick="abrirFormCliente(${c.id})">Editar</button>
             <button class="btn small" style="background:#fee2e2;color:var(--erro)" onclick="excluirCliente(${c.id})">Excluir</button>
           </td>

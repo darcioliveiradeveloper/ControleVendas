@@ -696,6 +696,23 @@ select:focus {
   color: var(--pendencia);
 }
 
+a.badge.zap-link {
+  margin-left: 6px;
+  background: var(--sucesso-suave);
+  color: var(--sucesso);
+  text-decoration: none;
+  cursor: pointer;
+  transition: filter 0.2s, transform 0.1s;
+}
+
+a.badge.zap-link:hover {
+  filter: brightness(0.95);
+}
+
+a.badge.zap-link:active {
+  transform: scale(0.97);
+}
+
 .small-btn {
   padding: 7px 11px;
   font-size: 12px;
