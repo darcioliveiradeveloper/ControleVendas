@@ -21,9 +21,9 @@ async function carregarTelaClientes() {
               <th>Contato</th>
               <th>Email</th>
               <th>Nascimento</th>
-              <th>Endereço</th>
+              <th class="col-endereco">Endereço</th>
               <th>Pontos</th>
-              <th>Cadastrado em</th>
+              <th class="col-cadastro">Cadastrado em</th>
               <th class="acoes"></th>
             </tr>
           </thead>
@@ -83,9 +83,9 @@ function renderClientes() {
           </td>
           <td>${c.email || '—'}</td>
           <td class="data">${formatarData(c.data_nascimento)}</td>
-          <td>${c.endereco || '—'}</td>
+          <td class="col-endereco">${c.endereco || '—'}</td>
           <td><span class="badge" style="background:var(--sucesso-suave);color:var(--sucesso)">${c.pontos || 0} pts</span></td>
-          <td class="data">${formatarData(c.criado_em)}</td>
+          <td class="data col-cadastro">${formatarData(c.criado_em)}</td>
           <td class="acoes">
             <button class="btn small secondary" onclick="abrirFormCliente(${c.id})">Editar</button>
             <button class="btn small" style="background:#fee2e2;color:var(--erro)" onclick="excluirCliente(${c.id})">Excluir</button>

@@ -54,7 +54,7 @@ body {
 /* ---- Sidebar ---- */
 
 .sidebar {
-  width: 248px;
+  width: 200px;
   background: var(--sidebar-bg);
   color: #fff;
   display: flex;
@@ -70,14 +70,14 @@ body {
 .sidebar-logo {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 20px 18px;
+  gap: 10px;
+  padding: 18px 14px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .sidebar-logo .logo {
-  width: 42px;
-  height: 42px;
+  width: 38px;
+  height: 38px;
   margin: 0;
   border-radius: 12px;
   background: linear-gradient(135deg, #e75480 0%, #9b72cf 100%);
@@ -91,14 +91,14 @@ body {
 }
 
 .sidebar-logo h2 {
-  font-size: 15px;
+  font-size: 13.5px;
   font-weight: 700;
   line-height: 1.25;
 }
 
 .nav {
   flex: 1;
-  padding: 14px 10px;
+  padding: 12px 8px;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -108,14 +108,14 @@ body {
 .nav-item {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   width: 100%;
-  padding: 12px 14px;
+  padding: 11px 12px;
   border: none;
   border-radius: 12px;
   background: transparent;
   color: #e0cbd6;
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 600;
   text-align: left;
   cursor: pointer;
@@ -146,7 +146,7 @@ body {
 }
 
 .sidebar-user {
-  padding: 16px 18px;
+  padding: 14px 14px;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   flex-direction: column;
@@ -166,7 +166,7 @@ body {
 
 .main {
   flex: 1;
-  margin-left: 248px;
+  margin-left: 200px;
   min-width: 0;
   background: linear-gradient(160deg, #fdf2f7 0%, #f9f1fb 45%, #f3ecfa 100%);
 }
@@ -648,12 +648,12 @@ select:focus {
   border-collapse: separate;
   border-spacing: 0;
   font-size: 14px;
-  min-width: 640px;
+  min-width: 560px;
 }
 
 .tabela th,
 .tabela td {
-  padding: 12px 14px;
+  padding: 10px 12px;
   text-align: left;
   border-bottom: 1px solid var(--borda);
   white-space: nowrap;
@@ -1147,6 +1147,15 @@ a.badge.zap-link:active {
 }
 
 /* ---- Responsivo ---- */
+
+@media (max-width: 760px) {
+  .tabela th.col-endereco,
+  .tabela td.col-endereco,
+  .tabela th.col-cadastro,
+  .tabela td.col-cadastro {
+    display: none;
+  }
+}
 
 @media (max-width: 900px) {
   .sidebar {
