@@ -1,5 +1,5 @@
 const telas = {};
-let telaAtual = 'resumo';
+let telaAtual = 'vendas';
 
 const TITULOS = {
   resumo: 'Resumo',
@@ -67,7 +67,7 @@ function iniciarApp() {
     botao.addEventListener('click', () => mostrarTela(botao.dataset.tela));
   });
 
-  mostrarTela('resumo');
+  mostrarTela('vendas');
 }
 
 document.addEventListener('DOMContentLoaded', iniciarApp);
