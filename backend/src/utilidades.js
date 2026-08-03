@@ -31,9 +31,16 @@ function calcularPrecoVenda(custo, margem) {
   return Math.round(custoNum * (1 + margemNum / 100) * 100) / 100;
 }
 
+function calcularMargemPercentual(custo, venda) {
+  const custoNum = Number(custo) || 0;
+  const vendaNum = Number(venda) || 0;
+  if (!custoNum || vendaNum < 0) return 0;
+  return Math.round(((vendaNum - custoNum) / custoNum) * 10000) / 100;
+}
+
 function intervaloDia(inicio, fim) {
   if (!inicio || !fim) return null;
   return { inicio: `${inicio} 00:00:00`, fim: `${fim} 23:59:59` };
 }
 
-module.exports = { agoraLocal, hoje, adicionarMeses, arredondar, calcularPrecoVenda, intervaloDia };
+module.exports = { agoraLocal, hoje, adicionarMeses, arredondar, calcularPrecoVenda, calcularMargemPercentual, intervaloDia };

@@ -109,13 +109,26 @@ function abrirFormProduto(id) {
             <input name="preco_custo" type="number" step="0.01" min="0" required value="${produto ? produto.preco_custo : '0'}" />
           </div>
           <div class="field">
-            <label>Margem (%)</label>
-            <input name="margem_percentual" type="number" step="0.01" min="0" required value="${produto ? produto.margem_percentual : '0'}" />
+            <label>Calcular lucro por</label>
+            <select name="modo_calculo">
+              <option value="percentual">Porcentagem (%)</option>
+              <option value="valor">Valor em R$</option>
+              <option value="total">Valor total de venda</option>
+            </select>
           </div>
           <div class="field">
-            <label>Preço de venda (calculado)</label>
-            <input name="preco_venda" type="text" readonly />
+            <label>Margem (%)</label>
+            <input name="margem_percentual" type="number" step="0.01" min="0" value="${produto ? produto.margem_percentual : '0'}" />
           </div>
+          <div class="field">
+            <label>Lucro (R$)</label>
+            <input name="lucro_valor" type="number" step="0.01" min="0" value="${produto ? Math.round((produto.preco_venda - produto.preco_custo) * 100) / 100 : '0'}" />
+          </div>
+          <div class="field">
+            <label>Preço de venda (R$)</label>
+            <input name="preco_venda" type="number" step="0.01" min="0" required value="${produto ? produto.preco_venda : ''}" />
+          </div>
+          <p class="help" style="grid-column:1/-1">Escolha um modo: o sistema preenche os outros valores automaticamente.</p>
           <div class="field">
             <label>Estoque inicial</label>
             <input name="estoque" type="number" min="0" value="${produto ? produto.estoque : '0'}" />
@@ -144,18 +157,52 @@ function abrirFormProduto(id) {
   const form = modal.querySelector('#form-produto');
   const inputs = {
     custo: form.elements.preco_custo,
+    modo: form.elements.modo_calculo,
     margem: form.elements.margem_percentual,
+    lucro: form.elements.lucro_valor,
     venda: form.elements.preco_venda,
   };
 
-  const atualizarPreco = () => {
-    const custo = Number(inputs.custo.value) || 0;
-    const margem = Number(inputs.margem.value) || 0;
-    inputs.venda.value = formatarMoeda(Math.round(custo * (1 + margem / 100) * 100) / 100);
-  };
-  inputs.custo.addEventListener('input', atualizarPreco);
-  inputs.margem.addEventListener('input', atualizarPreco);
-  atualizarPreco();
+  const num = (el) => Number(el.value) || 0;
+  const round2 = (n) => Math.round(n * 100) / 100;
+
+  function sincronizar() {
+    const c = num(inputs.custo);
+    let m;
+    let l;
+    let v;
+    if (inputs.modo.value === 'valor') {
+      l = num(inputs.lucro);
+      v = round2(c + l);
+      m = c ? round2(((v - c) / c) * 100) : 0;
+    } else if (inputs.modo.value === 'total') {
+      v = num(inputs.venda);
+      l = round2(v - c);
+      m = c ? round2(((v - c) / c) * 100) : 0;
+    } else {
+      m = num(inputs.margem);
+      v = round2(c * (1 + m / 100));
+      l = round2(v - c);
+    }
+    inputs.margem.value = m;
+    inputs.lucro.value = l;
+    inputs.venda.value = v;
+  }
+
+  function aplicarModo() {
+    const ativo = inputs.modo.value;
+    inputs.margem.readOnly = ativo !== 'percentual';
+    inputs.lucro.readOnly = ativo !== 'valor';
+    inputs.venda.readOnly = ativo !== 'total';
+    sincronizar();
+  }
+
+  inputs.custo.addEventListener('input', sincronizar);
+  inputs.margem.addEventListener('input', sincronizar);
+  inputs.lucro.addEventListener('input', sincronizar);
+  inputs.venda.addEventListener('input', sincronizar);
+  inputs.modo.addEventListener('change', aplicarModo);
+  aplicarModo();
 
   const fechar = () => modal.remove();
   modal.querySelector('.modal-fechar').addEventListener('click', fechar);

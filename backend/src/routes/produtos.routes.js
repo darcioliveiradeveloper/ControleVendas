@@ -6,7 +6,7 @@ const Produto = require('../models/Produto');
 const MovimentoEstoque = require('../models/MovimentoEstoque');
 const autenticar = require('../middleware/auth');
 const { proximoId } = require('../ids');
-const { agoraLocal, calcularPrecoVenda } = require('../utilidades');
+const { agoraLocal, calcularPrecoVenda, calcularMargemPercentual, arredondar } = require('../utilidades');
 
 const router = express.Router();
 
@@ -43,7 +43,7 @@ function removerFoto(caminho) {
 router.use(autenticar);
 
 router.post('/', upload.single('foto'), async (req, res) => {
-  const { nome, descricao, observacoes, preco_custo, margem_percentual, estoque } = req.body || {};
+  const { nome, descricao, observacoes, preco_custo, margem_percentual, preco_venda, estoque } = req.body || {};
 
   if (!nome || !String(nome).trim()) {
     if (req.file) removerFoto(req.file.path);
@@ -51,8 +51,21 @@ router.post('/', upload.single('foto'), async (req, res) => {
   }
 
   const precoCusto = Number(preco_custo) || 0;
-  const margem = Number(margem_percentual) || 0;
-  const precoVenda = calcularPrecoVenda(precoCusto, margem);
+  const precoVendaInformado = preco_venda !== undefined && String(preco_venda).trim() !== '';
+
+  let precoVenda;
+  let margem;
+  if (precoVendaInformado) {
+    precoVenda = arredondar(Number(preco_venda));
+    if (precoVenda < 0) {
+      if (req.file) removerFoto(req.file.path);
+      return res.status(400).json({ erro: 'O preço de venda não pode ser negativo.' });
+    }
+    margem = calcularMargemPercentual(precoCusto, precoVenda);
+  } else {
+    margem = Number(margem_percentual) || 0;
+    precoVenda = calcularPrecoVenda(precoCusto, margem);
+  }
   const estoqueNum = Math.max(0, parseInt(estoque, 10) || 0);
 
   const produto = await Produto.create({
@@ -97,7 +110,7 @@ router.put('/:id', upload.single('foto'), async (req, res) => {
     return res.status(404).json({ erro: 'Produto não encontrado.' });
   }
 
-  const { nome, descricao, observacoes, preco_custo, margem_percentual, estoque, manter_foto } = req.body || {};
+  const { nome, descricao, observacoes, preco_custo, margem_percentual, preco_venda, estoque, manter_foto } = req.body || {};
 
   const novoNome = nome !== undefined ? String(nome).trim() : produto.nome;
   if (!novoNome) {
@@ -106,8 +119,21 @@ router.put('/:id', upload.single('foto'), async (req, res) => {
   }
 
   const precoCusto = preco_custo !== undefined ? Number(preco_custo) || 0 : produto.preco_custo;
-  const margem = margem_percentual !== undefined ? Number(margem_percentual) || 0 : produto.margem_percentual;
-  const precoVenda = calcularPrecoVenda(precoCusto, margem);
+  const precoVendaInformado = preco_venda !== undefined && String(preco_venda).trim() !== '';
+
+  let precoVenda;
+  let margem;
+  if (precoVendaInformado) {
+    precoVenda = arredondar(Number(preco_venda));
+    if (precoVenda < 0) {
+      if (req.file) removerFoto(req.file.path);
+      return res.status(400).json({ erro: 'O preço de venda não pode ser negativo.' });
+    }
+    margem = calcularMargemPercentual(precoCusto, precoVenda);
+  } else {
+    margem = margem_percentual !== undefined ? Number(margem_percentual) || 0 : produto.margem_percentual;
+    precoVenda = calcularPrecoVenda(precoCusto, margem);
+  }
   const estoqueNum = estoque !== undefined ? Math.max(0, parseInt(estoque, 10) || 0) : produto.estoque;
 
   let fotoNova = produto.foto;
