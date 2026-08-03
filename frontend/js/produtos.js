@@ -164,7 +164,8 @@ function abrirFormProduto(id) {
                 <button type="button" class="btn secondary" id="btn-foto-link">Buscar na internet</button>
                 ${produto && produto.foto ? '<button type="button" class="btn secondary" id="btn-remover-foto">Remover foto</button>' : ''}
               </div>
-              <input id="input-foto" type="file" accept="image/*" hidden />
+              <input id="input-foto-camera" type="file" accept="image/*" capture="environment" class="foto-input-escondido" />
+              <input id="input-foto" type="file" accept="image/*" class="foto-input-escondido" />
               <div class="foto-url" id="foto-url" hidden>
                 <input name="foto_url" type="url" placeholder="Cole aqui o link da imagem" />
                 <p class="help">Abriu o Google com o nome do produto? Escolha a imagem, copie o endereço e cole aqui.</p>
@@ -191,6 +192,7 @@ function abrirFormProduto(id) {
     lucro: form.elements.lucro_valor,
   };
   const botoesModo = modal.querySelectorAll('.modo-preco button');
+  const inputFotoCamera = modal.querySelector('#input-foto-camera');
   const inputFoto = modal.querySelector('#input-foto');
   const preview = modal.querySelector('#preview-foto');
   const areaUrl = modal.querySelector('#foto-url');
@@ -248,11 +250,9 @@ function abrirFormProduto(id) {
   aplicarModo();
 
   modal.querySelector('#btn-foto-camera').addEventListener('click', () => {
-    inputFoto.setAttribute('capture', 'environment');
-    inputFoto.click();
+    inputFotoCamera.click();
   });
   modal.querySelector('#btn-foto-arquivo').addEventListener('click', () => {
-    inputFoto.removeAttribute('capture');
     inputFoto.click();
   });
   modal.querySelector('#btn-foto-link').addEventListener('click', () => {
@@ -262,8 +262,7 @@ function abrirFormProduto(id) {
     inputUrl.focus();
   });
 
-  inputFoto.addEventListener('change', () => {
-    const arquivo = inputFoto.files[0];
+  function tratarArquivo(arquivo) {
     if (!arquivo) return;
     fotoSelecionada = arquivo;
     inputUrl.value = '';
@@ -273,6 +272,15 @@ function abrirFormProduto(id) {
       preview.innerHTML = `<img src="${leitor.result}" />`;
     };
     leitor.readAsDataURL(arquivo);
+  }
+
+  inputFotoCamera.addEventListener('change', () => {
+    tratarArquivo(inputFotoCamera.files[0]);
+    inputFotoCamera.value = '';
+  });
+  inputFoto.addEventListener('change', () => {
+    tratarArquivo(inputFoto.files[0]);
+    inputFoto.value = '';
   });
 
   let timeoutUrl;
@@ -285,6 +293,7 @@ function abrirFormProduto(id) {
       img.onload = () => {
         preview.innerHTML = `<img src="${url}" />`;
         fotoSelecionada = null;
+        inputFotoCamera.value = '';
         inputFoto.value = '';
         fotoRemovida = false;
       };
@@ -297,6 +306,7 @@ function abrirFormProduto(id) {
     botaoRemover.addEventListener('click', () => {
       fotoRemovida = true;
       fotoSelecionada = null;
+      inputFotoCamera.value = '';
       inputFoto.value = '';
       inputUrl.value = '';
       areaUrl.hidden = true;
@@ -314,7 +324,7 @@ function abrirFormProduto(id) {
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const formData = new FormData(form);
-    const arquivo = inputFoto.files[0];
+    const arquivo = fotoSelecionada;
     const url = inputUrl.value.trim();
 
     if (arquivo) {
