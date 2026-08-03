@@ -58,7 +58,7 @@ async function carregarTelaEstoque() {
               <th>Qtd.</th>
               <th>Custo unit.</th>
               <th>Obs.</th>
-              <th></th>
+              <th class="acoes"></th>
             </tr>
           </thead>
           <tbody id="corpo-movimentos"></tbody>

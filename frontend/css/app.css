@@ -645,7 +645,8 @@ select:focus {
 
 .tabela {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   font-size: 14px;
   min-width: 640px;
 }
@@ -667,11 +668,28 @@ select:focus {
   color: var(--texto-suave);
 }
 
+.tabela th.acoes,
+.tabela td.acoes {
+  position: sticky;
+  right: 0;
+  z-index: 1;
+  background: #fff;
+  box-shadow: -8px 0 10px -6px rgba(15, 23, 42, 0.12);
+}
+
+.tabela th.acoes {
+  background: #fbf2f7;
+}
+
 .tabela tbody tr {
   transition: background 0.15s;
 }
 
 .tabela tbody tr:hover {
+  background: #fdf6fa;
+}
+
+.tabela tbody tr:hover td.acoes {
   background: #fdf6fa;
 }
 

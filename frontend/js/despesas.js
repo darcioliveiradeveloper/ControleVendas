@@ -21,7 +21,7 @@ async function carregarTelaDespesas() {
               <th>Descrição</th>
               <th>Categoria</th>
               <th>Valor</th>
-              <th></th>
+              <th class="acoes"></th>
             </tr>
           </thead>
           <tbody id="corpo-despesas"></tbody>

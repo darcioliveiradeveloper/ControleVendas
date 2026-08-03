@@ -33,7 +33,7 @@ async function carregarTelaVendas() {
                   <th>Preço</th>
                   <th>Qtd.</th>
                   <th>Subtotal</th>
-                  <th></th>
+                  <th class="acoes"></th>
                 </tr>
               </thead>
               <tbody id="carrinho-corpo"></tbody>
@@ -122,7 +122,7 @@ async function carregarTelaVendas() {
               <th>Pagamento</th>
               <th>Total</th>
               <th>Status</th>
-              <th></th>
+              <th class="acoes"></th>
             </tr>
           </thead>
           <tbody id="corpo-vendas"></tbody>
@@ -482,7 +482,7 @@ function renderDetalheVenda() {
       <div class="table-wrapper">
         <table class="tabela">
           <thead>
-            <tr><th>Nº</th><th>Vencimento</th><th>Valor</th><th>Status</th><th></th></tr>
+            <tr><th>Nº</th><th>Vencimento</th><th>Valor</th><th>Status</th><th class="acoes"></th></tr>
           </thead>
           <tbody>
             ${v.parcelas

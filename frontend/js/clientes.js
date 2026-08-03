@@ -24,7 +24,7 @@ async function carregarTelaClientes() {
               <th>Endereço</th>
               <th>Pontos</th>
               <th>Cadastrado em</th>
-              <th></th>
+              <th class="acoes"></th>
             </tr>
           </thead>
           <tbody id="corpo-clientes"></tbody>
