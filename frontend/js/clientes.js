@@ -18,8 +18,10 @@ async function carregarTelaClientes() {
           <thead>
             <tr>
               <th>Nome</th>
+              <th>WhatsApp</th>
               <th>Telefone</th>
               <th>Endereço</th>
+              <th>Pontos</th>
               <th>Cadastrado em</th>
               <th></th>
             </tr>
@@ -60,7 +62,7 @@ function linkWhatsApp(numero) {
 function renderClientes() {
   const corpo = document.getElementById('corpo-clientes');
   if (!clientesAtuais.length) {
-    corpo.innerHTML = `<tr><td colspan="6" class="vazio">Nenhum cliente cadastrado.</td></tr>`;
+    corpo.innerHTML = `<tr><td colspan="7" class="vazio">Nenhum cliente cadastrado.</td></tr>`;
     return;
   }
 
@@ -73,6 +75,7 @@ function renderClientes() {
           <td>${c.whatsapp || '—'}</td>
           <td>${c.telefone || '—'}</td>
           <td>${c.endereco || '—'}</td>
+          <td><span class="badge" style="background:var(--sucesso-suave);color:var(--sucesso)">${c.pontos || 0} pts</span></td>
           <td class="data">${formatarData(c.criado_em)}</td>
           <td class="acoes">
             ${zap ? `<button class="btn small" style="background:#dcfce7;color:var(--sucesso)" onclick="window.open('${zap}', '_blank')">WhatsApp</button>` : ''}
@@ -115,6 +118,7 @@ function abrirFormCliente(id) {
             <input name="endereco" type="text" value="${cliente ? (cliente.endereco || '') : ''}" />
           </div>
         </div>
+        ${cliente ? `<p class="help" style="margin-bottom:14px">Pontos atuais: <strong>${cliente.pontos || 0}</strong> (10 pontos = 50% de desconto em um produto)</p>` : ''}
         <div class="form-actions">
           <button type="submit" class="btn primary">Salvar</button>
           <button type="button" class="btn secondary modal-cancelar">Cancelar</button>

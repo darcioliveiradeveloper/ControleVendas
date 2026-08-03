@@ -35,16 +35,25 @@ router.post('/', async (req, res) => {
   const forma = formasValidas.includes(forma_pagamento) ? forma_pagamento : 'a_vista';
 
   const itensCarregados = [];
+  let pontosGanhos = 0;
+  let pontosUtilizados = 0;
   for (const item of itens) {
     const qtd = parseInt(item.quantidade, 10);
     if (!qtd || qtd <= 0) {
       return res.status(400).json({ erro: 'Quantidade inválida em um dos produtos.' });
     }
+    const desconto =
+      item.desconto_percentual === undefined || item.desconto_percentual === null ? 0 : Number(item.desconto_percentual);
+    if (desconto !== 0 && desconto !== 50) {
+      return res.status(400).json({ erro: 'O desconto por pontos só pode ser de 50%.' });
+    }
     const produto = await Produto.findById(Number(item.produto_id));
     if (!produto) {
       return res.status(400).json({ erro: 'Um dos produtos não foi encontrado.' });
     }
-    itensCarregados.push({ produto, quantidade: qtd });
+    itensCarregados.push({ produto, quantidade: qtd, desconto_percentual: desconto });
+    pontosGanhos += qtd;
+    if (desconto === 50) pontosUtilizados += 10;
   }
 
   if (tipoVenda === 'venda') {
@@ -56,8 +65,25 @@ router.post('/', async (req, res) => {
     }
   }
 
+  let cliente = null;
+  if (cliente_id) {
+    cliente = await Cliente.findById(Number(cliente_id));
+  }
+
+  if (tipoVenda === 'encomenda' && pontosUtilizados > 0) {
+    return res.status(400).json({ erro: 'Pontos só podem ser usados em vendas, não em encomendas.' });
+  }
+  if (cliente && pontosUtilizados > 0 && (cliente.pontos || 0) < pontosUtilizados) {
+    return res.status(400).json({
+      erro: `O cliente tem ${cliente.pontos || 0} ponto(s), mas precisa de ${pontosUtilizados}.`,
+    });
+  }
+
   const total = arredondar(
-    itensCarregados.reduce((s, i) => s + i.produto.preco_venda * i.quantidade, 0)
+    itensCarregados.reduce(
+      (s, i) => s + i.produto.preco_venda * (1 - i.desconto_percentual / 100) * i.quantidade,
+      0
+    )
   );
 
   let listaParcelas;
@@ -89,11 +115,7 @@ router.post('/', async (req, res) => {
     }
   }
 
-  let clienteNome = null;
-  if (cliente_id) {
-    const cliente = await Cliente.findById(Number(cliente_id));
-    clienteNome = cliente ? cliente.nome : null;
-  }
+  let clienteNome = cliente ? cliente.nome : null;
 
   try {
     const venda = await Venda.create({
@@ -107,12 +129,33 @@ router.post('/', async (req, res) => {
         produto_id: i.produto._id,
         produto_nome: i.produto.nome,
         quantidade: i.quantidade,
-        preco_unitario: i.produto.preco_venda,
+        preco_unitario: arredondar(i.produto.preco_venda * (1 - i.desconto_percentual / 100)),
         custo_unitario: i.produto.preco_custo,
+        desconto_percentual: i.desconto_percentual,
       })),
       parcelas: listaParcelas,
+      pontos_ganhos: tipoVenda === 'venda' ? pontosGanhos : 0,
+      pontos_utilizados: pontosUtilizados,
       criado_em: agoraLocal(),
     });
+
+    if (tipoVenda === 'venda' && cliente) {
+      try {
+        await Cliente.updateOne(
+          { _id: cliente._id },
+          {
+            $inc: {
+              pontos: pontosGanhos - pontosUtilizados,
+              pontos_ganhos: pontosGanhos,
+              pontos_utilizados: pontosUtilizados,
+            },
+            $set: { atualizado_em: agoraLocal() },
+          }
+        );
+      } catch (e) {
+        console.error('Erro ao atualizar pontos do cliente:', e.message);
+      }
+    }
 
     return res.status(201).json(detalhe(venda));
   } catch (erro) {
@@ -205,7 +248,19 @@ router.post('/:id/confirmar', async (req, res) => {
     );
   }
   venda.tipo = 'venda';
+  const pontosGanhos = venda.itens.reduce((s, i) => s + (i.quantidade || 0), 0);
+  venda.pontos_ganhos = pontosGanhos;
   await venda.save();
+
+  if (venda.cliente_id && pontosGanhos) {
+    await Cliente.updateOne(
+      { _id: venda.cliente_id },
+      {
+        $inc: { pontos: pontosGanhos, pontos_ganhos: pontosGanhos },
+        $set: { atualizado_em: agoraLocal() },
+      }
+    );
+  }
 
   return res.json(detalhe(venda));
 });
@@ -229,6 +284,20 @@ router.delete('/:id', async (req, res) => {
   }
   venda.status = 'cancelada';
   await venda.save();
+
+  if (venda.cliente_id && (venda.pontos_ganhos || venda.pontos_utilizados)) {
+    await Cliente.updateOne(
+      { _id: venda.cliente_id },
+      {
+        $inc: {
+          pontos: -(venda.pontos_ganhos - venda.pontos_utilizados),
+          pontos_ganhos: -venda.pontos_ganhos,
+          pontos_utilizados: -venda.pontos_utilizados,
+        },
+        $set: { atualizado_em: agoraLocal() },
+      }
+    );
+  }
 
   return res.json(detalhe(venda));
 });

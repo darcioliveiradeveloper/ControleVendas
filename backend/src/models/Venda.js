@@ -7,6 +7,7 @@ const itemSchema = new mongoose.Schema(
     quantidade: { type: Number, required: true },
     preco_unitario: { type: Number, required: true },
     custo_unitario: { type: Number, default: 0 },
+    desconto_percentual: { type: Number, default: 0 },
   },
   { _id: true, toJSON: { virtuals: true } }
 );
@@ -33,6 +34,8 @@ const schema = new mongoose.Schema(
     status: { type: String, enum: ['ativa', 'cancelada'], default: 'ativa' },
     itens: { type: [itemSchema], default: [] },
     parcelas: { type: [parcelaSchema], default: [] },
+    pontos_ganhos: { type: Number, default: 0 },
+    pontos_utilizados: { type: Number, default: 0 },
     criado_em: { type: String, default: null },
   },
   {

@@ -39,6 +39,7 @@ async function carregarTelaVendas() {
               <tbody id="carrinho-corpo"></tbody>
             </table>
           </div>
+          <p class="help" id="resumo-pontos"></p>
           <div class="total-box">
             <span>Total</span>
             <strong id="carrinho-total">${formatarMoeda(0)}</strong>
@@ -56,6 +57,7 @@ async function carregarTelaVendas() {
                 <option value="">Cliente avulso</option>
               </select>
             </div>
+            <p class="help" id="info-pontos-cliente" style="margin-top:-4px">Cliente avulso — sem pontos.</p>
             <div class="field">
               <label>Tipo</label>
               <select name="tipo">
@@ -154,6 +156,14 @@ async function carregarTelaVendas() {
   selecionarForma('pix');
   formFinalizar.addEventListener('submit', confirmarVenda);
 
+  const selectCliente = formFinalizar.querySelector('select[name="cliente_id"]');
+  const infoPontos = tela.querySelector('#info-pontos-cliente');
+  selectCliente.addEventListener('change', () => {
+    const c = clientesVenda.find((x) => x.id === Number(selectCliente.value));
+    infoPontos.textContent = c ? `Pontos disponíveis: ${c.pontos || 0}` : 'Cliente avulso — sem pontos.';
+    renderCarrinho();
+  });
+
   tela.querySelector('#busca-venda').addEventListener('input', (e) => {
     const t = e.target.value;
     setTimeout(() => carregarVendas(t), 300);
@@ -237,32 +247,74 @@ function adicionarAoCarrinho(produtoId) {
 
 function renderCarrinho() {
   const corpo = document.getElementById('carrinho-corpo');
-  const total = carrinho.reduce((s, i) => s + i.preco_venda * i.quantidade, 0);
+  const lineTotal = (i) =>
+    i.preco_venda * (1 - (i.desconto_percentual === 50 ? 0.5 : 0)) * i.quantidade;
+  const total = carrinho.reduce((s, i) => s + lineTotal(i), 0);
+  const itensComDesconto = carrinho.filter((i) => i.desconto_percentual === 50);
+  const pontosUsados = itensComDesconto.length * 10;
+  const descontoTotal = itensComDesconto.reduce((s, i) => s + i.preco_venda * 0.5 * i.quantidade, 0);
 
   if (!carrinho.length) {
     corpo.innerHTML = `<tr><td colspan="5" class="vazio">Carrinho vazio. Busque um produto acima.</td></tr>`;
   } else {
     corpo.innerHTML = carrinho
-      .map(
-        (i) => `
+      .map((i) => {
+        const comDesconto = i.desconto_percentual === 50;
+        return `
           <tr>
-            <td>${i.nome}</td>
+            <td>${i.nome}${comDesconto ? ' <span class="badge" style="background:var(--sucesso-suave);color:var(--sucesso)">50% off</span>' : ''}</td>
             <td>${formatarMoeda(i.preco_venda)}</td>
             <td>
               <input class="quantidade-input" type="number" min="1" value="${i.quantidade}"
                      onchange="alterarQuantidadeCarrinho(${i.id}, this.value)" />
             </td>
-            <td>${formatarMoeda(i.preco_venda * i.quantidade)}</td>
+            <td>${formatarMoeda(lineTotal(i))}</td>
             <td class="acoes">
+              ${
+                comDesconto
+                  ? `<button class="small-btn btn" style="background:var(--sucesso-suave);color:var(--sucesso)" onclick="removerDescontoCarrinho(${i.id})">10 pts ✓</button>`
+                  : `<button class="small-btn btn" style="background:var(--pendencia-suave);color:var(--pendencia)" onclick="aplicarDescontoCarrinho(${i.id})">🎁 Usar 10 pts</button>`
+              }
               <button class="small-btn btn secondary" onclick="removerDoCarrinho(${i.id})">×</button>
             </td>
           </tr>
-        `
-      )
+        `;
+      })
       .join('');
   }
 
   document.getElementById('carrinho-total').textContent = formatarMoeda(total);
+  const resumo = document.getElementById('resumo-pontos');
+  if (resumo) {
+    resumo.textContent = pontosUsados
+      ? `Desconto por pontos: ${formatarMoeda(descontoTotal)} (${pontosUsados} pontos)`
+      : '';
+  }
+}
+
+function aplicarDescontoCarrinho(produtoId) {
+  const selectCliente = document.querySelector('#form-finalizar select[name="cliente_id"]');
+  const cliente = clientesVenda.find((c) => c.id === Number(selectCliente.value));
+  if (!cliente) {
+    alert('Selecione um cliente para usar pontos.');
+    return;
+  }
+  const item = carrinho.find((i) => i.id === produtoId);
+  if (!item) return;
+  const usados = carrinho.filter((i) => i.desconto_percentual === 50).length * 10;
+  if ((cliente.pontos || 0) < usados + 10) {
+    alert(`O cliente tem ${cliente.pontos || 0} ponto(s). São necessários ${usados + 10}.`);
+    return;
+  }
+  item.desconto_percentual = 50;
+  renderCarrinho();
+}
+
+function removerDescontoCarrinho(produtoId) {
+  const item = carrinho.find((i) => i.id === produtoId);
+  if (!item) return;
+  item.desconto_percentual = 0;
+  renderCarrinho();
 }
 
 function alterarQuantidadeCarrinho(produtoId, quantidade) {
@@ -289,7 +341,11 @@ async function confirmarVenda(e) {
     tipo: f.tipo.value,
     forma_pagamento: f.forma_pagamento.value,
     pago: f.pago.checked,
-    itens: carrinho.map((i) => ({ produto_id: i.id, quantidade: i.quantidade })),
+    itens: carrinho.map((i) => ({
+      produto_id: i.id,
+      quantidade: i.quantidade,
+      desconto_percentual: i.desconto_percentual === 50 ? 50 : 0,
+    })),
   };
   if (f.forma_pagamento.value === 'parcelado') {
     corpo.numero_parcelas = Number(f.numero_parcelas.value) || 1;
@@ -399,16 +455,24 @@ function renderDetalheVenda() {
           </thead>
           <tbody>
             ${v.itens
-              .map(
-                (i) => `
+              .map((i) => {
+                const comDesconto = i.desconto_percentual === 50;
+                const original = comDesconto ? Math.round(i.preco_unitario * 2 * 100) / 100 : null;
+                return `
                   <tr>
                     <td>${i.produto_nome}</td>
                     <td>${i.quantidade}</td>
-                    <td>${formatarMoeda(i.preco_unitario)}</td>
+                    <td>
+                      ${
+                        comDesconto
+                          ? `<span style="text-decoration:line-through;color:var(--texto-suave)">${formatarMoeda(original)}</span> ${formatarMoeda(i.preco_unitario)} <span class="badge" style="background:var(--sucesso-suave);color:var(--sucesso)">50% pts</span>`
+                          : formatarMoeda(i.preco_unitario)
+                      }
+                    </td>
                     <td>${formatarMoeda(i.preco_unitario * i.quantidade)}</td>
                   </tr>
-                `
-              )
+                `;
+              })
               .join('')}
           </tbody>
         </table>
@@ -445,6 +509,12 @@ function renderDetalheVenda() {
           </tbody>
         </table>
       </div>
+
+      ${
+        v.pontos_ganhos || v.pontos_utilizados
+          ? `<p class="help">Pontos: <strong>+${v.pontos_ganhos || 0}</strong> ganhos / <strong>${v.pontos_utilizados || 0}</strong> usados</p>`
+          : ''
+      }
 
       <div class="total-box" style="margin-top:12px">
         <span>Total</span>
