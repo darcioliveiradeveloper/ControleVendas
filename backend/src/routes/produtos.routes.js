@@ -40,10 +40,29 @@ function removerFoto(caminho) {
   fs.unlink(arquivo, () => {});
 }
 
+async function baixarFoto(url) {
+  if (!/^https?:\/\//i.test(String(url))) return null;
+  try {
+    const res = await fetch(String(url), { redirect: 'follow', signal: AbortSignal.timeout(15000) });
+    if (!res.ok) return null;
+    const tipo = (res.headers.get('content-type') || '').split(';')[0].toLowerCase();
+    if (!tipo.startsWith('image/')) return null;
+    const buf = Buffer.from(await res.arrayBuffer());
+    if (buf.length > 2 * 1024 * 1024) return null;
+    const extMap = { 'image/jpeg': '.jpg', 'image/png': '.png', 'image/webp': '.webp', 'image/gif': '.gif' };
+    const ext = extMap[tipo] || '.jpg';
+    const nome = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
+    fs.writeFileSync(path.join(PASTA_UPLOADS, nome), buf);
+    return '/uploads/' + nome;
+  } catch (e) {
+    return null;
+  }
+}
+
 router.use(autenticar);
 
 router.post('/', upload.single('foto'), async (req, res) => {
-  const { nome, descricao, observacoes, preco_custo, margem_percentual, preco_venda, estoque } = req.body || {};
+  const { nome, marca, tipo, tamanho, descricao, observacoes, preco_custo, margem_percentual, preco_venda, estoque, foto_url } = req.body || {};
 
   if (!nome || !String(nome).trim()) {
     if (req.file) removerFoto(req.file.path);
@@ -68,16 +87,27 @@ router.post('/', upload.single('foto'), async (req, res) => {
   }
   const estoqueNum = Math.max(0, parseInt(estoque, 10) || 0);
 
+  let foto = req.file ? '/uploads/' + req.file.filename : null;
+  if (!foto && req.body.foto_url) {
+    foto = await baixarFoto(req.body.foto_url);
+    if (!foto) {
+      return res.status(400).json({ erro: 'Não foi possível baixar a imagem do link informado.' });
+    }
+  }
+
   const produto = await Produto.create({
     _id: await proximoId('produtos'),
     nome: String(nome).trim(),
+    marca: marca ? String(marca).trim() : null,
+    tipo: tipo ? String(tipo).trim() : null,
+    tamanho: tamanho ? String(tamanho).trim() : null,
     descricao: descricao ? String(descricao).trim() : null,
     observacoes: observacoes ? String(observacoes).trim() : null,
     preco_custo: precoCusto,
     margem_percentual: margem,
     preco_venda: precoVenda,
     estoque: estoqueNum,
-    foto: req.file ? '/uploads/' + req.file.filename : null,
+    foto,
     criado_em: agoraLocal(),
   });
 
@@ -89,7 +119,7 @@ router.get('/', async (req, res) => {
   let filtro = {};
   if (busca) {
     const regex = new RegExp(escaparRegex(busca), 'i');
-    filtro = { $or: [{ nome: regex }, { descricao: regex }] };
+    filtro = { $or: [{ nome: regex }, { marca: regex }, { descricao: regex }] };
   }
   const linhas = await Produto.find(filtro).sort({ nome: 1 });
   return res.json(linhas);
@@ -110,7 +140,7 @@ router.put('/:id', upload.single('foto'), async (req, res) => {
     return res.status(404).json({ erro: 'Produto não encontrado.' });
   }
 
-  const { nome, descricao, observacoes, preco_custo, margem_percentual, preco_venda, estoque, manter_foto } = req.body || {};
+  const { nome, marca, tipo, tamanho, descricao, observacoes, preco_custo, margem_percentual, preco_venda, estoque, manter_foto, foto_url } = req.body || {};
 
   const novoNome = nome !== undefined ? String(nome).trim() : produto.nome;
   if (!novoNome) {
@@ -143,9 +173,19 @@ router.put('/:id', upload.single('foto'), async (req, res) => {
   } else if (manter_foto === 'false') {
     removerFoto(produto.foto);
     fotoNova = null;
+  } else if (!req.file && req.body.foto_url) {
+    const baixada = await baixarFoto(req.body.foto_url);
+    if (!baixada) {
+      return res.status(400).json({ erro: 'Não foi possível baixar a imagem do link informado.' });
+    }
+    removerFoto(produto.foto);
+    fotoNova = baixada;
   }
 
   produto.nome = novoNome;
+  produto.marca = marca !== undefined ? (marca ? String(marca).trim() : null) : produto.marca;
+  produto.tipo = tipo !== undefined ? (tipo ? String(tipo).trim() : null) : produto.tipo;
+  produto.tamanho = tamanho !== undefined ? (tamanho ? String(tamanho).trim() : null) : produto.tamanho;
   produto.descricao = descricao !== undefined ? String(descricao).trim() || null : produto.descricao;
   produto.observacoes = observacoes !== undefined ? String(observacoes).trim() || null : produto.observacoes;
   produto.preco_custo = precoCusto;

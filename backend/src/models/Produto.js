@@ -4,6 +4,9 @@ const schema = new mongoose.Schema(
   {
     _id: { type: Number },
     nome: { type: String, required: true, trim: true },
+    marca: { type: String, default: null },
+    tipo: { type: String, default: null },
+    tamanho: { type: String, default: null },
     descricao: { type: String, default: null },
     observacoes: { type: String, default: null },
     preco_custo: { type: Number, default: 0 },

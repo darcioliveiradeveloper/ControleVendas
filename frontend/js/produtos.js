@@ -57,6 +57,7 @@ function renderProdutos() {
     .map((p) => {
       const foto = urlFoto(p.foto);
       const baixo = Number(p.estoque) <= 5;
+      const meta = [p.marca, p.tipo, p.tamanho].filter(Boolean).join(' · ');
       return `
         <div class="produto-card">
           <div class="produto-foto">
@@ -64,6 +65,7 @@ function renderProdutos() {
           </div>
           <div class="produto-info">
             <span class="produto-nome">${p.nome}</span>
+            ${meta ? `<span class="produto-meta">${meta}</span>` : ''}
             ${p.descricao ? `<span class="produto-desc">${p.descricao}</span>` : ''}
             ${p.observacoes ? `<span class="produto-desc">📌 ${p.observacoes}</span>` : ''}
             <span class="produto-preco">${formatarMoeda(p.preco_venda)}</span>
@@ -94,7 +96,19 @@ function abrirFormProduto(id) {
         <div class="form-grid">
           <div class="field">
             <label>Nome *</label>
-            <input name="nome" type="text" required value="${produto ? (produto.nome || '') : ''}" />
+            <input name="nome" type="text" required placeholder="Ex.: Body brilho" value="${produto ? (produto.nome || '') : ''}" />
+          </div>
+          <div class="field">
+            <label>Marca</label>
+            <input name="marca" type="text" placeholder="Ex.: Glow" value="${produto ? (produto.marca || '') : ''}" />
+          </div>
+          <div class="field">
+            <label>Tipo</label>
+            <input name="tipo" type="text" placeholder="Ex.: Body, Batom..." value="${produto ? (produto.tipo || '') : ''}" />
+          </div>
+          <div class="field">
+            <label>Tamanho</label>
+            <input name="tamanho" type="text" placeholder="Ex.: P, M, G, 200ml" value="${produto ? (produto.tamanho || '') : ''}" />
           </div>
           <div class="field">
             <label>Descrição</label>
@@ -104,46 +118,61 @@ function abrirFormProduto(id) {
             <label>Observações</label>
             <textarea name="observacoes" rows="2" placeholder="Ex.: vendido em kit, validade, fornecedor...">${produto ? (produto.observacoes || '') : ''}</textarea>
           </div>
-          <div class="field">
-            <label>Preço de custo (R$)</label>
-            <input name="preco_custo" type="number" step="0.01" min="0" required value="${produto ? produto.preco_custo : '0'}" />
+
+          <div class="bloco-precos">
+            <label>Preços</label>
+            <div class="modo-preco">
+              <button type="button" class="ativo" data-modo="percentual">Margem (%)</button>
+              <button type="button" data-modo="valor">Lucro (R$)</button>
+              <button type="button" data-modo="total">Venda (R$)</button>
+            </div>
+            <div class="precos-grid">
+              <div class="field">
+                <label>Custo (R$) *</label>
+                <input name="preco_custo" type="number" step="0.01" min="0" required placeholder="0,00" value="${produto ? produto.preco_custo : ''}" />
+              </div>
+              <div class="field">
+                <label>Margem (%)</label>
+                <input name="margem_percentual" type="number" step="0.01" min="0" placeholder="0,00" value="${produto ? produto.margem_percentual : ''}" />
+              </div>
+              <div class="field">
+                <label>Venda (R$)</label>
+                <input name="preco_venda" type="number" step="0.01" min="0" placeholder="0,00" value="${produto ? produto.preco_venda : ''}" />
+              </div>
+              <div class="field">
+                <label>Lucro (R$)</label>
+                <input name="lucro_valor" type="number" step="0.01" placeholder="0,00" value="${produto ? Math.round((produto.preco_venda - produto.preco_custo) * 100) / 100 : ''}" />
+              </div>
+            </div>
+            <p class="help">Digite o custo e o valor do modo selecionado. O sistema calcula os demais automaticamente.</p>
           </div>
+
           <div class="field">
-            <label>Calcular lucro por</label>
-            <select name="modo_calculo">
-              <option value="percentual">Porcentagem (%)</option>
-              <option value="valor">Valor em R$</option>
-              <option value="total">Valor total de venda</option>
-            </select>
+            <label>Estoque ${produto ? 'atual' : 'inicial'}</label>
+            <input name="estoque" type="number" min="0" placeholder="0" value="${produto ? produto.estoque : ''}" />
           </div>
-          <div class="field">
-            <label>Margem (%)</label>
-            <input name="margem_percentual" type="number" step="0.01" min="0" value="${produto ? produto.margem_percentual : '0'}" />
-          </div>
-          <div class="field">
-            <label>Lucro (R$)</label>
-            <input name="lucro_valor" type="number" step="0.01" min="0" value="${produto ? Math.round((produto.preco_venda - produto.preco_custo) * 100) / 100 : '0'}" />
-          </div>
-          <div class="field">
-            <label>Preço de venda (R$)</label>
-            <input name="preco_venda" type="number" step="0.01" min="0" required value="${produto ? produto.preco_venda : ''}" />
-          </div>
-          <p class="help" style="grid-column:1/-1">Escolha um modo: o sistema preenche os outros valores automaticamente.</p>
-          <div class="field">
-            <label>Estoque inicial</label>
-            <input name="estoque" type="number" min="0" value="${produto ? produto.estoque : '0'}" />
-          </div>
-          <div class="campo-foto">
-            <label>Foto</label>
-            <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
-              <div class="preview-foto" id="preview-foto">${produto && produto.foto ? `<img src="${urlFoto(produto.foto)}" />` : `<span class="produto-sem-foto">${SVG_SEM_FOTO}</span>`}</div>
-              <div style="display:flex;flex-direction:column;gap:8px">
-                <input name="foto" type="file" accept="image/*" />
-                ${produto && produto.foto ? `<label class="checkbox-label"><input type="checkbox" name="manter_foto" checked /> Manter foto atual</label>` : ''}
+        </div>
+
+        <div class="campo-foto">
+          <label>Foto</label>
+          <div class="foto-linha">
+            <div class="preview-foto" id="preview-foto">${produto && produto.foto ? `<img src="${urlFoto(produto.foto)}" />` : `<span class="produto-sem-foto">${SVG_SEM_FOTO}</span>`}</div>
+            <div class="foto-controles">
+              <div class="foto-opcoes">
+                <button type="button" class="btn secondary" id="btn-foto-camera">Câmera</button>
+                <button type="button" class="btn secondary" id="btn-foto-arquivo">Arquivo</button>
+                <button type="button" class="btn secondary" id="btn-foto-link">Buscar na internet</button>
+                ${produto && produto.foto ? '<button type="button" class="btn secondary" id="btn-remover-foto">Remover foto</button>' : ''}
+              </div>
+              <input id="input-foto" type="file" accept="image/*" hidden />
+              <div class="foto-url" id="foto-url" hidden>
+                <input name="foto_url" type="url" placeholder="Cole aqui o link da imagem" />
+                <p class="help">Abriu o Google com o nome do produto? Escolha a imagem, copie o endereço e cole aqui.</p>
               </div>
             </div>
           </div>
         </div>
+
         <div class="form-actions">
           <button type="submit" class="btn primary">Salvar</button>
           <button type="button" class="btn secondary modal-cancelar">Cancelar</button>
@@ -157,11 +186,19 @@ function abrirFormProduto(id) {
   const form = modal.querySelector('#form-produto');
   const inputs = {
     custo: form.elements.preco_custo,
-    modo: form.elements.modo_calculo,
     margem: form.elements.margem_percentual,
-    lucro: form.elements.lucro_valor,
     venda: form.elements.preco_venda,
+    lucro: form.elements.lucro_valor,
   };
+  const botoesModo = modal.querySelectorAll('.modo-preco button');
+  const inputFoto = modal.querySelector('#input-foto');
+  const preview = modal.querySelector('#preview-foto');
+  const areaUrl = modal.querySelector('#foto-url');
+  const inputUrl = form.elements.foto_url;
+
+  let modo = 'percentual';
+  let fotoSelecionada = null;
+  let fotoRemovida = false;
 
   const num = (el) => Number(el.value) || 0;
   const round2 = (n) => Math.round(n * 100) / 100;
@@ -171,14 +208,14 @@ function abrirFormProduto(id) {
     let m;
     let l;
     let v;
-    if (inputs.modo.value === 'valor') {
+    if (modo === 'valor') {
       l = num(inputs.lucro);
       v = round2(c + l);
-      m = c ? round2(((v - c) / c) * 100) : 0;
-    } else if (inputs.modo.value === 'total') {
+      m = c ? round2((l / c) * 100) : 0;
+    } else if (modo === 'total') {
       v = num(inputs.venda);
       l = round2(v - c);
-      m = c ? round2(((v - c) / c) * 100) : 0;
+      m = c ? round2((l / c) * 100) : 0;
     } else {
       m = num(inputs.margem);
       v = round2(c * (1 + m / 100));
@@ -190,19 +227,82 @@ function abrirFormProduto(id) {
   }
 
   function aplicarModo() {
-    const ativo = inputs.modo.value;
-    inputs.margem.readOnly = ativo !== 'percentual';
-    inputs.lucro.readOnly = ativo !== 'valor';
-    inputs.venda.readOnly = ativo !== 'total';
-    sincronizar();
+    botoesModo.forEach((b) => b.classList.toggle('ativo', b.dataset.modo === modo));
+    inputs.margem.readOnly = modo !== 'percentual';
+    inputs.lucro.readOnly = modo !== 'valor';
+    inputs.venda.readOnly = modo !== 'total';
   }
+
+  botoesModo.forEach((b) => {
+    b.addEventListener('click', () => {
+      modo = b.dataset.modo;
+      aplicarModo();
+      sincronizar();
+    });
+  });
 
   inputs.custo.addEventListener('input', sincronizar);
   inputs.margem.addEventListener('input', sincronizar);
   inputs.lucro.addEventListener('input', sincronizar);
   inputs.venda.addEventListener('input', sincronizar);
-  inputs.modo.addEventListener('change', aplicarModo);
   aplicarModo();
+
+  modal.querySelector('#btn-foto-camera').addEventListener('click', () => {
+    inputFoto.setAttribute('capture', 'environment');
+    inputFoto.click();
+  });
+  modal.querySelector('#btn-foto-arquivo').addEventListener('click', () => {
+    inputFoto.removeAttribute('capture');
+    inputFoto.click();
+  });
+  modal.querySelector('#btn-foto-link').addEventListener('click', () => {
+    const nome = (form.elements.nome.value || '').trim();
+    window.open('https://www.google.com/search?tbm=isch&q=' + encodeURIComponent(nome ? nome + ' imagem' : 'imagem'), '_blank');
+    areaUrl.hidden = false;
+    inputUrl.focus();
+  });
+
+  inputFoto.addEventListener('change', () => {
+    const arquivo = inputFoto.files[0];
+    if (!arquivo) return;
+    fotoSelecionada = arquivo;
+    inputUrl.value = '';
+    areaUrl.hidden = true;
+    const leitor = new FileReader();
+    leitor.onload = () => {
+      preview.innerHTML = `<img src="${leitor.result}" />`;
+    };
+    leitor.readAsDataURL(arquivo);
+  });
+
+  let timeoutUrl;
+  inputUrl.addEventListener('input', () => {
+    clearTimeout(timeoutUrl);
+    timeoutUrl = setTimeout(() => {
+      const url = inputUrl.value.trim();
+      if (!/^https?:\/\//i.test(url)) return;
+      const img = new Image();
+      img.onload = () => {
+        preview.innerHTML = `<img src="${url}" />`;
+        fotoSelecionada = null;
+        inputFoto.value = '';
+        fotoRemovida = false;
+      };
+      img.src = url;
+    }, 500);
+  });
+
+  const botaoRemover = modal.querySelector('#btn-remover-foto');
+  if (botaoRemover) {
+    botaoRemover.addEventListener('click', () => {
+      fotoRemovida = true;
+      fotoSelecionada = null;
+      inputFoto.value = '';
+      inputUrl.value = '';
+      areaUrl.hidden = true;
+      preview.innerHTML = `<span class="produto-sem-foto">${SVG_SEM_FOTO}</span>`;
+    });
+  }
 
   const fechar = () => modal.remove();
   modal.querySelector('.modal-fechar').addEventListener('click', fechar);
@@ -214,8 +314,19 @@ function abrirFormProduto(id) {
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const formData = new FormData(form);
-    if (produto && !formData.get('foto').size) {
+    const arquivo = inputFoto.files[0];
+    const url = inputUrl.value.trim();
+
+    if (arquivo) {
+      formData.set('foto', arquivo, arquivo.name);
+    } else {
       formData.delete('foto');
+    }
+    if (!/^https?:\/\//i.test(url)) {
+      formData.delete('foto_url');
+    }
+    if (produto) {
+      formData.set('manter_foto', (!fotoRemovida && !arquivo && !/^https?:\/\//i.test(url)) ? 'true' : 'false');
     }
     try {
       if (produto) {

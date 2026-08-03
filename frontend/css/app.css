@@ -339,6 +339,103 @@ input[readonly] {
   flex-wrap: wrap;
 }
 
+.bloco-precos {
+  grid-column: 1 / -1;
+  border: 1.5px dashed var(--borda);
+  border-radius: 14px;
+  padding: 14px;
+  background: #fcfafb;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bloco-precos > label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--texto);
+}
+
+.modo-preco {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.modo-preco button {
+  border: 1.5px solid var(--borda);
+  background: #fff;
+  color: var(--texto-suave);
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.modo-preco button.ativo {
+  background: var(--primaria);
+  border-color: var(--primaria);
+  color: #fff;
+}
+
+.precos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+}
+
+.foto-linha {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.foto-controles {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+  min-width: 220px;
+}
+
+.foto-opcoes {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.foto-url {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.foto-url[hidden] {
+  display: none;
+}
+
+.foto-url input {
+  padding: 12px 14px;
+  border: 1.5px solid var(--borda);
+  border-radius: 12px;
+  font-size: 15px;
+  color: var(--texto);
+  background: #f8fafc;
+  width: 100%;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+}
+
+.foto-url input:focus {
+  outline: none;
+  border-color: var(--primaria);
+  box-shadow: 0 0 0 4px rgba(197, 106, 140, 0.15);
+  background: #fff;
+}
+
 /* ---- Botões ---- */
 
 .btn {
