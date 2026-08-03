@@ -21,7 +21,6 @@ async function carregarTelaClientes() {
               <th>Contato</th>
               <th>Email</th>
               <th>Nascimento</th>
-              <th class="col-endereco">Endereço</th>
               <th>Pontos</th>
               <th class="col-cadastro">Cadastrado em</th>
               <th class="acoes"></th>
@@ -83,7 +82,6 @@ function renderClientes() {
           </td>
           <td>${c.email || '—'}</td>
           <td class="data">${formatarData(c.data_nascimento)}</td>
-          <td class="col-endereco">${c.endereco || '—'}</td>
           <td><span class="badge" style="background:var(--sucesso-suave);color:var(--sucesso)">${c.pontos || 0} pts</span></td>
           <td class="data col-cadastro">${formatarData(c.criado_em)}</td>
           <td class="acoes">
@@ -133,10 +131,6 @@ function abrirFormCliente(id) {
             <label>Data de nascimento</label>
             <input name="data_nascimento" type="date" value="${cliente ? (cliente.data_nascimento || '') : ''}" />
           </div>
-          <div class="field">
-            <label>Endereço</label>
-            <input name="endereco" type="text" value="${cliente ? (cliente.endereco || '') : ''}" />
-          </div>
         </div>
         ${cliente ? `<p class="help" style="margin-bottom:14px">Pontos atuais: <strong>${cliente.pontos || 0}</strong> (10 pontos = 50% de desconto em um produto)</p>` : ''}
         <div class="form-actions">
@@ -175,7 +169,6 @@ function abrirFormCliente(id) {
       nome: f.nome.value,
       email: f.email.value || null,
       data_nascimento: f.data_nascimento.value || null,
-      endereco: f.endereco.value || null,
     };
     if (tipoContato === 'telefone') {
       corpo.telefone = contato || null;

@@ -1149,8 +1149,6 @@ a.badge.zap-link:active {
 /* ---- Responsivo ---- */
 
 @media (max-width: 760px) {
-  .tabela th.col-endereco,
-  .tabela td.col-endereco,
   .tabela th.col-cadastro,
   .tabela td.col-cadastro {
     display: none;

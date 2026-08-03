@@ -13,7 +13,7 @@ function escaparRegex(texto) {
 }
 
 router.post('/', async (req, res) => {
-  const { nome, endereco, telefone, whatsapp, email, data_nascimento } = req.body || {};
+  const { nome, telefone, whatsapp, email, data_nascimento } = req.body || {};
 
   if (!nome || !String(nome).trim()) {
     return res.status(400).json({ erro: 'O nome do cliente é obrigatório.' });
@@ -22,7 +22,6 @@ router.post('/', async (req, res) => {
   const cliente = await Cliente.create({
     _id: await proximoId('clientes'),
     nome: String(nome).trim(),
-    endereco: endereco ? String(endereco).trim() : null,
     telefone: telefone ? String(telefone).trim() : null,
     whatsapp: whatsapp ? String(whatsapp).trim() : null,
     email: email ? String(email).trim() : null,
@@ -38,7 +37,7 @@ router.get('/', async (req, res) => {
   let filtro = {};
   if (busca) {
     const regex = new RegExp(escaparRegex(busca), 'i');
-    filtro = { $or: [{ nome: regex }, { telefone: regex }, { whatsapp: regex }, { email: regex }, { endereco: regex }] };
+    filtro = { $or: [{ nome: regex }, { telefone: regex }, { whatsapp: regex }, { email: regex }] };
   }
   const linhas = await Cliente.find(filtro).sort({ nome: 1 });
   return res.json(linhas);
@@ -58,7 +57,7 @@ router.put('/:id', async (req, res) => {
     return res.status(404).json({ erro: 'Cliente não encontrado.' });
   }
 
-  const { nome, endereco, telefone, whatsapp, email, data_nascimento } = req.body || {};
+  const { nome, telefone, whatsapp, email, data_nascimento } = req.body || {};
 
   const novoNome = nome !== undefined ? String(nome).trim() : cliente.nome;
   if (!novoNome) {
@@ -67,14 +66,12 @@ router.put('/:id', async (req, res) => {
 
   const limpar = (v) => (v === undefined ? undefined : v === null ? null : String(v).trim() || null);
 
-  const novoEndereco = limpar(endereco);
   const novoTelefone = limpar(telefone);
   const novoWhatsapp = limpar(whatsapp);
   const novoEmail = limpar(email);
   const novoNascimento = limpar(data_nascimento);
 
   cliente.nome = novoNome;
-  if (novoEndereco !== undefined) cliente.endereco = novoEndereco;
   if (novoTelefone !== undefined) cliente.telefone = novoTelefone;
   if (novoWhatsapp !== undefined) cliente.whatsapp = novoWhatsapp;
   if (novoEmail !== undefined) cliente.email = novoEmail;

@@ -4,7 +4,6 @@ const schema = new mongoose.Schema(
   {
     _id: { type: Number },
     nome: { type: String, required: true, trim: true },
-    endereco: { type: String, default: null },
     email: { type: String, default: null },
     data_nascimento: { type: String, default: null },
     telefone: { type: String, default: null },
