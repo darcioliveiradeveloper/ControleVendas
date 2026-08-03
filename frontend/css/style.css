@@ -5,18 +5,20 @@
 }
 
 :root {
-  --primaria: #6366f1;
-  --primaria-escura: #4f46e5;
-  --primaria-clara: #a5b4fc;
+  --primaria: #c56a8c;
+  --primaria-escura: #a74e74;
+  --primaria-clara: #ebc7d6;
+  --lavanda: #9b72cf;
+  --rosa: #e75480;
   --sucesso: #16a34a;
   --erro: #dc2626;
-  --fundo: #eef2f7;
-  --cartao: #ffffff;
-  --texto: #0f172a;
-  --texto-suave: #64748b;
-  --borda: #e2e8f0;
+  --fundo: #fbf2f7;
+  --cartao: #fffbfe;
+  --texto: #3a2e39;
+  --texto-suave: #9b7c8a;
+  --borda: #f0dde8;
   --raio: 18px;
-  --sombra: 0 20px 50px -20px rgba(30, 27, 75, 0.45);
+  --sombra: 0 20px 50px -20px rgba(167, 78, 116, 0.45);
 }
 
 html,
@@ -39,7 +41,7 @@ body {
   align-items: center;
   justify-content: center;
   padding: 20px;
-  background: linear-gradient(135deg, #1e1b4b 0%, #4f46e5 50%, #7c3aed 100%);
+  background: linear-gradient(135deg, #7a3b5c 0%, #b06e97 50%, #9b72cf 100%);
   overflow: hidden;
 }
 
@@ -55,7 +57,7 @@ body {
 .auth-page::before {
   width: 380px;
   height: 380px;
-  background: #818cf8;
+  background: #f2a9c8;
   top: -120px;
   right: -100px;
 }
@@ -63,7 +65,7 @@ body {
 .auth-page::after {
   width: 340px;
   height: 340px;
-  background: #c084fc;
+  background: #c9a6ee;
   bottom: -120px;
   left: -90px;
 }
@@ -101,18 +103,18 @@ body {
   height: 62px;
   margin: 0 auto 14px;
   border-radius: 18px;
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  background: linear-gradient(135deg, #e75480 0%, #9b72cf 100%);
   color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 10px 24px -8px rgba(99, 102, 241, 0.7);
+  box-shadow: 0 10px 24px -8px rgba(231, 84, 128, 0.6);
 }
 
-.logo-icon {
-  font-size: 30px;
-  font-weight: 800;
-  letter-spacing: -1px;
+.logo-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
 .auth-header h1 {
@@ -210,7 +212,7 @@ body {
 .field input:focus {
   outline: none;
   border-color: var(--primaria);
-  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
+  box-shadow: 0 0 0 4px rgba(197, 106, 140, 0.15);
   background: #fff;
 }
 
@@ -230,14 +232,14 @@ body {
 }
 
 .btn.primary {
-  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  background: linear-gradient(135deg, #e75480 0%, #c56a8c 100%);
   color: #fff;
-  box-shadow: 0 10px 20px -8px rgba(79, 70, 229, 0.6);
+  box-shadow: 0 10px 20px -8px rgba(167, 78, 116, 0.5);
 }
 
 .btn.primary:hover {
   filter: brightness(1.06);
-  box-shadow: 0 12px 24px -8px rgba(79, 70, 229, 0.7);
+  box-shadow: 0 12px 24px -8px rgba(167, 78, 116, 0.6);
 }
 
 .btn:disabled {

@@ -1,23 +1,25 @@
 /* ---- Base ---- */
 
 :root {
-  --primaria: #6366f1;
-  --primaria-escura: #4f46e5;
-  --primaria-clara: #a5b4fc;
+  --primaria: #c56a8c;
+  --primaria-escura: #a74e74;
+  --primaria-clara: #ebc7d6;
+  --lavanda: #9b72cf;
+  --rosa: #e75480;
   --sucesso: #16a34a;
   --sucesso-suave: #dcfce7;
   --erro: #dc2626;
   --erro-suave: #fee2e2;
   --pendencia: #b45309;
   --pendencia-suave: #fef3c7;
-  --fundo: #eef2f7;
-  --cartao: #ffffff;
-  --texto: #0f172a;
-  --texto-suave: #64748b;
-  --borda: #e2e8f0;
+  --fundo: #fbf2f7;
+  --cartao: #fffbfe;
+  --texto: #3a2e39;
+  --texto-suave: #9b7c8a;
+  --borda: #f0dde8;
   --raio: 16px;
-  --sombra: 0 1px 3px rgba(15, 23, 42, 0.06), 0 8px 24px -12px rgba(15, 23, 42, 0.12);
-  --sidebar-bg: linear-gradient(180deg, #1e1b4b 0%, #312e81 100%);
+  --sombra: 0 1px 3px rgba(58, 46, 57, 0.06), 0 8px 24px -12px rgba(58, 46, 57, 0.12);
+  --sidebar-bg: linear-gradient(180deg, #6e3854 0%, #8a4f71 60%, #9b72cf 100%);
 }
 
 * {
@@ -78,13 +80,14 @@ body {
   height: 42px;
   margin: 0;
   border-radius: 12px;
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-  box-shadow: 0 8px 18px -6px rgba(99, 102, 241, 0.7);
+  background: linear-gradient(135deg, #e75480 0%, #9b72cf 100%);
+  box-shadow: 0 8px 18px -6px rgba(231, 84, 128, 0.6);
 }
 
-.sidebar-logo .logo-icon {
-  font-size: 20px;
-  font-weight: 800;
+.sidebar-logo .logo-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
 .sidebar-logo h2 {
@@ -111,7 +114,7 @@ body {
   border: none;
   border-radius: 12px;
   background: transparent;
-  color: #c7d2fe;
+  color: #e0cbd6;
   font-size: 14px;
   font-weight: 600;
   text-align: left;
@@ -126,9 +129,9 @@ body {
 }
 
 .nav-item.active {
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  background: linear-gradient(135deg, #e75480 0%, #9b72cf 100%);
   color: #fff;
-  box-shadow: 0 8px 18px -8px rgba(99, 102, 241, 0.8);
+  box-shadow: 0 8px 18px -8px rgba(231, 84, 128, 0.6);
 }
 
 .nav-item.disabled {
@@ -152,7 +155,7 @@ body {
 
 .sidebar-user span {
   font-size: 13px;
-  color: #c7d2fe;
+  color: #e0cbd6;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -253,7 +256,7 @@ body {
 .panel-head input:focus {
   outline: none;
   border-color: var(--primaria);
-  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
+  box-shadow: 0 0 0 4px rgba(197, 106, 140, 0.15);
 }
 
 /* ---- Formulários ---- */
@@ -304,7 +307,7 @@ textarea {
 textarea:focus {
   outline: none;
   border-color: var(--primaria);
-  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
+  box-shadow: 0 0 0 4px rgba(197, 106, 140, 0.15);
   background: #fff;
 }
 
@@ -338,9 +341,9 @@ input[readonly] {
 }
 
 .btn.primary {
-  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  background: linear-gradient(135deg, #e75480 0%, #c56a8c 100%);
   color: #fff;
-  box-shadow: 0 8px 18px -8px rgba(79, 70, 229, 0.6);
+  box-shadow: 0 8px 18px -8px rgba(167, 78, 116, 0.55);
 }
 
 .btn.primary:hover {
@@ -500,7 +503,7 @@ select {
 select:focus {
   outline: none;
   border-color: var(--primaria);
-  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
+  box-shadow: 0 0 0 4px rgba(197, 106, 140, 0.15);
   background: #fff;
 }
 
@@ -532,7 +535,7 @@ select:focus {
 }
 
 .tabela th {
-  background: #f8fafc;
+  background: #fbf2f7;
   font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
@@ -545,7 +548,7 @@ select:focus {
 }
 
 .tabela tbody tr:hover {
-  background: #fafbff;
+  background: #fdf6fa;
 }
 
 .tabela td.data {
@@ -637,7 +640,7 @@ select:focus {
 }
 
 .resultado-busca .item-busca:hover {
-  background: #f4f6ff;
+  background: #fbf2f7;
 }
 
 .resultado-busca .item-busca.sem-resultado {
