@@ -94,7 +94,7 @@ function renderClientes() {
     .join('');
 }
 
-function abrirFormCliente(id) {
+function abrirFormCliente(id, aoSalvar) {
   const cliente = id ? clientesAtuais.find((c) => c.id === id) : null;
   const contatoInicial = cliente ? (cliente.whatsapp || cliente.telefone || '') : '';
   const tipoContatoInicial = cliente && cliente.whatsapp ? 'whatsapp' : cliente && cliente.telefone ? 'telefone' : 'whatsapp';
@@ -178,13 +178,15 @@ function abrirFormCliente(id) {
       corpo.telefone = null;
     }
     try {
+      let salvo;
       if (cliente) {
-        await requisicaoJSON(`${API()}/clientes/${cliente.id}`, 'PUT', corpo, obterToken());
+        salvo = await requisicaoJSON(`${API()}/clientes/${cliente.id}`, 'PUT', corpo, obterToken());
       } else {
-        await requisicaoJSON(`${API()}/clientes`, 'POST', corpo, obterToken());
+        salvo = await requisicaoJSON(`${API()}/clientes`, 'POST', corpo, obterToken());
       }
       fechar();
       await buscarClientes('');
+      if (typeof aoSalvar === 'function') aoSalvar(salvo);
     } catch (erro) {
       alert(erro.message);
     }

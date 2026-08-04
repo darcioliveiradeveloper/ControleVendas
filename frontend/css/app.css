@@ -769,6 +769,79 @@ a.badge.zap-link:active {
   padding-left: 24px;
 }
 
+.busca-produto-grande {
+  padding: 14px 18px;
+  font-size: 16px;
+  border-radius: 14px;
+}
+
+.selecao-bloco {
+  margin-top: 18px;
+  border-top: 1px solid var(--borda);
+  padding-top: 16px;
+}
+
+.selecao-bloco h3 {
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--texto-suave);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.total-itens {
+  margin-top: 8px;
+  padding: 10px 16px;
+  background: #fcfafb;
+}
+
+.total-itens strong {
+  font-size: 18px;
+  color: var(--texto);
+}
+
+.cliente-novo-linha {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.cliente-novo-linha select {
+  flex: 1;
+}
+
+.parcela-campos {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  border: 1px dashed var(--borda);
+  border-radius: 12px;
+  padding: 14px;
+  background: #fcfafb;
+}
+
+.parcela-campos[hidden] {
+  display: none;
+}
+
+.preview-parcelas {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--texto);
+}
+
+.preview-parcelas li {
+  margin: 0;
+}
+
+.preview-parcelas strong {
+  font-size: inherit;
+  color: var(--sucesso);
+}
+
 .busca-relativa {
   position: relative;
 }
@@ -821,6 +894,10 @@ a.badge.zap-link:active {
   font-weight: 800;
   color: var(--sucesso);
   white-space: nowrap;
+}
+
+.item-busca .btn {
+  flex-shrink: 0;
 }
 
 .quantidade-input {
@@ -1068,7 +1145,7 @@ a.badge.zap-link:active {
 
 .pagamento-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 8px;
 }
 

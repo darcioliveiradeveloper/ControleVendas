@@ -24,7 +24,7 @@ function escaparRegex(texto) {
 }
 
 router.post('/', async (req, res) => {
-  const { cliente_id, tipo, forma_pagamento, numero_parcelas, data_primeira_parcela, pago, itens } = req.body || {};
+  const { cliente_id, tipo, forma_pagamento, numero_parcelas, data_primeira_parcela, primeira_parcela_avista, pago, itens } = req.body || {};
 
   if (!itens || !Array.isArray(itens) || itens.length === 0) {
     return res.status(400).json({ erro: 'Adicione pelo menos um produto à venda.' });
@@ -89,7 +89,10 @@ router.post('/', async (req, res) => {
   let listaParcelas;
   if (forma !== 'parcelado') {
     const venc = data_primeira_parcela || hoje();
-    listaParcelas = [{ numero: 1, valor: total, data_vencimento: venc, pago: pago ? true : false }];
+    const pagoNow = pago ? true : false;
+    listaParcelas = [
+      { numero: 1, valor: total, data_vencimento: venc, pago: pagoNow, data_pagamento: pagoNow ? hoje() : null },
+    ];
   } else {
     const n = Math.max(1, parseInt(numero_parcelas, 10) || 1);
     const primeira = data_primeira_parcela || hoje();
@@ -99,7 +102,14 @@ router.post('/', async (req, res) => {
     for (let i = 1; i <= n; i++) {
       const valor = i === n ? arredondar(total - soma) : valorBase;
       soma = arredondar(soma + valor);
-      listaParcelas.push({ numero: i, valor, data_vencimento: adicionarMeses(primeira, i - 1), pago: false });
+      const pago = primeira_parcela_avista === true && i === 1;
+      listaParcelas.push({
+        numero: i,
+        valor,
+        data_vencimento: pago ? hoje() : adicionarMeses(primeira, i - 1),
+        pago,
+        data_pagamento: pago ? hoje() : null,
+      });
     }
   }
 
