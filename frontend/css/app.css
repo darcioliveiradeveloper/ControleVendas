@@ -1087,6 +1087,13 @@ a.badge.zap-link:active {
   margin-top: 16px;
 }
 
+.venda-direita form .btn[type="submit"] {
+  width: 100%;
+  margin-top: 10px;
+  padding: 13px 18px;
+  font-size: 15px;
+}
+
 /* ---- Responsivo vendas ---- */
 
 @media (max-width: 900px) {
