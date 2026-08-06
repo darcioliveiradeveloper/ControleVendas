@@ -770,6 +770,7 @@ a.badge.zap-link:active {
 }
 
 .busca-produto-grande {
+  width: 100%;
   padding: 14px 18px;
   font-size: 16px;
   border-radius: 14px;
@@ -1146,11 +1147,11 @@ a.badge.zap-link:active {
 .pagamento-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
+  gap: 12px;
 }
 
 .pagamento-btn {
-  padding: 10px 8px;
+  padding: 12px 8px;
   border: 1.5px solid var(--borda);
   border-radius: 10px;
   background: #fff;
@@ -1229,6 +1230,72 @@ a.badge.zap-link:active {
   .tabela th.col-cadastro,
   .tabela td.col-cadastro {
     display: none;
+  }
+
+  .tabela-movel {
+    min-width: 0;
+  }
+
+  .tabela-movel thead {
+    display: none;
+  }
+
+  .tabela-movel tbody {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .tabela-movel tr {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px 12px;
+    padding: 12px;
+    border: 1px solid var(--borda);
+    border-radius: 12px;
+    background: #fff;
+  }
+
+  .tabela-movel td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    padding: 0;
+    border: none;
+    white-space: normal;
+  }
+
+  .tabela-movel td::before {
+    content: attr(data-label);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--texto-suave);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  .tabela-movel td.vazio {
+    grid-column: 1 / -1;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .tabela-movel td.acoes {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 4px;
+  }
+
+  .tabela-movel td.acoes::before {
+    display: none;
+  }
+
+  .tabela-movel .quantidade-input {
+    width: 72px;
+    padding: 10px 8px;
   }
 }
 

@@ -179,13 +179,14 @@ router.post('/', async (req, res) => {
 });
 
 router.get('/', async (req, res) => {
-  const { tipo, status, busca } = req.query;
+  const { tipo, status, busca, limite } = req.query;
   const filtro = {};
   if (tipo) filtro.tipo = tipo;
   if (status) filtro.status = status;
   if (busca) filtro.cliente_nome = new RegExp(escaparRegex(busca), 'i');
 
-  const linhas = await Venda.find(filtro).sort({ _id: -1 }).limit(100);
+  const limiteVendas = Math.min(100, Math.max(1, parseInt(limite, 10) || 100));
+  const linhas = await Venda.find(filtro).sort({ _id: -1 }).limit(limiteVendas);
   const lista = linhas.map((v) => {
     const obj = v.toJSON();
     const pagas = obj.parcelas.filter((p) => p.pago);

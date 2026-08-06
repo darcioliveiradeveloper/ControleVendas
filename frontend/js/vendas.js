@@ -30,7 +30,7 @@ async function carregarTelaVendas() {
           <div id="selecao-bloco" class="selecao-bloco hidden">
             <h3>Escolhido — defina a quantidade e adicione ao carrinho</h3>
             <div class="table-wrapper">
-              <table class="tabela">
+              <table class="tabela tabela-movel">
                 <thead>
                   <tr>
                     <th>Produto</th>
@@ -46,7 +46,7 @@ async function carregarTelaVendas() {
           </div>
 
           <div class="table-wrapper">
-            <table class="tabela">
+            <table class="tabela tabela-movel">
               <thead>
                 <tr>
                   <th>Produto</th>
@@ -74,7 +74,7 @@ async function carregarTelaVendas() {
       <div class="venda-direita">
         <div class="panel">
           <h2>Concluir venda</h2>
-          <form id="form-finalizar" class="form" style="gap:14px">
+          <form id="form-finalizar" class="form" style="gap:18px">
             <div class="field">
               <label>Cliente</label>
               <div class="cliente-novo-linha">
@@ -122,6 +122,10 @@ async function carregarTelaVendas() {
         <h2>Vendas</h2>
         <div class="filtros" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
           <input id="busca-venda" type="search" placeholder="Buscar por cliente..." />
+          <select id="filtro-visao-venda">
+            <option value="ultima">Última venda</option>
+            <option value="todas">Todas as vendas</option>
+          </select>
           <select id="filtro-tipo-venda">
             <option value="">Todas</option>
             <option value="venda">Vendas</option>
@@ -203,6 +207,7 @@ async function carregarTelaVendas() {
     const t = e.target.value;
     setTimeout(() => carregarVendas(t), 300);
   });
+  tela.querySelector('#filtro-visao-venda').addEventListener('change', () => carregarVendas());
   tela.querySelector('#filtro-tipo-venda').addEventListener('change', () => carregarVendas());
   tela.querySelector('#filtro-status-venda').addEventListener('change', () => carregarVendas());
 
@@ -291,13 +296,13 @@ function renderSelecao() {
       const sub = i.preco_venda * i.quantidade;
       return `
         <tr>
-          <td>${i.nome}</td>
-          <td>${formatarMoeda(i.preco_venda)}</td>
-          <td>
+          <td data-label="Produto">${i.nome}</td>
+          <td data-label="Preço">${formatarMoeda(i.preco_venda)}</td>
+          <td data-label="Qtd.">
             <input class="quantidade-input" type="number" min="1" value="${i.quantidade}"
                    onchange="alterarQtdEscolhido(${i.id}, this.value)" />
           </td>
-          <td>${formatarMoeda(sub)}</td>
+          <td data-label="Subtotal">${formatarMoeda(sub)}</td>
           <td class="acoes">
             <button class="btn small primary" onclick="adicionarAoCarrinho(${i.id})">Adicionar</button>
             <button class="btn small secondary" onclick="removerEscolhido(${i.id})">×</button>
@@ -371,13 +376,13 @@ function renderCarrinho() {
         const comDesconto = i.desconto_percentual === 50;
         return `
           <tr>
-            <td>${i.nome}${comDesconto ? ' <span class="badge" style="background:var(--sucesso-suave);color:var(--sucesso)">50% off</span>' : ''}</td>
-            <td>${formatarMoeda(i.preco_venda)}</td>
-            <td>
+            <td data-label="Produto">${i.nome}${comDesconto ? ' <span class="badge" style="background:var(--sucesso-suave);color:var(--sucesso)">50% off</span>' : ''}</td>
+            <td data-label="Preço">${formatarMoeda(i.preco_venda)}</td>
+            <td data-label="Qtd.">
               <input class="quantidade-input" type="number" min="1" value="${i.quantidade}"
                      onchange="alterarQuantidadeCarrinho(${i.id}, this.value)" />
             </td>
-            <td>${formatarMoeda(lineTotal(i))}</td>
+            <td data-label="Subtotal">${formatarMoeda(lineTotal(i))}</td>
             <td class="acoes">
               ${
                 comDesconto
@@ -482,12 +487,17 @@ let timeoutBuscaVenda = null;
 async function carregarVendas(busca) {
   clearTimeout(timeoutBuscaVenda);
   timeoutBuscaVenda = setTimeout(async () => {
+    const visao = document.getElementById('filtro-visao-venda').value;
     const tipo = document.getElementById('filtro-tipo-venda').value;
     const status = document.getElementById('filtro-status-venda').value;
     const params = new URLSearchParams();
-    if (tipo) params.set('tipo', tipo);
-    if (status) params.set('status', status);
-    if (busca) params.set('busca', busca);
+    if (visao === 'ultima') {
+      params.set('limite', 1);
+    } else {
+      if (tipo) params.set('tipo', tipo);
+      if (status) params.set('status', status);
+      if (busca) params.set('busca', busca);
+    }
     try {
       vendasAtuais = await requisicaoJSON(`${API()}/vendas?${params}`, 'GET', null, obterToken());
       renderVendas();
