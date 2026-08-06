@@ -1080,6 +1080,13 @@ a.badge.zap-link:active {
   flex-wrap: wrap;
 }
 
+.confirmacao-acoes {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 16px;
+}
+
 /* ---- Responsivo vendas ---- */
 
 @media (max-width: 900px) {
