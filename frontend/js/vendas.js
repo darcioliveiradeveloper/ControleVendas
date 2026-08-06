@@ -72,7 +72,7 @@ async function carregarTelaVendas() {
       <div class="venda-direita">
         <div class="panel">
           <h2>Concluir venda</h2>
-          <form id="form-finalizar" class="form" style="gap:18px">
+          <form id="form-finalizar" class="form" style="gap:23px">
             <div class="field">
               <label>Cliente</label>
               <div class="cliente-novo-linha">
