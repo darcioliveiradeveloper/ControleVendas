@@ -71,8 +71,8 @@ async function carregarTelaVendas() {
 
       <div class="venda-direita">
         <div class="panel">
-          <h2>Concluir venda</h2>
-          <form id="form-finalizar" class="form" style="gap:23px">
+          <h2>Concluir Venda</h2>
+          <form id="form-finalizar" class="form">
             <div class="field">
               <label>Cliente</label>
               <div class="cliente-novo-linha">
@@ -109,7 +109,7 @@ async function carregarTelaVendas() {
                 <input name="primeira_parcela_avista" type="checkbox" /> Primeira parcela à vista (entrada)
               </label>
             </div>
-            <button type="submit" class="btn primary">Concluir venda</button>
+            <button type="submit" class="btn primary">Concluir Venda</button>
           </form>
         </div>
       </div>

@@ -17,6 +17,7 @@
   --texto: #3a2e39;
   --texto-suave: #9b7c8a;
   --borda: #f0dde8;
+  --borda-forte: #d5aac4;
   --raio: 16px;
   --sombra: 0 1px 3px rgba(58, 46, 57, 0.06), 0 8px 24px -12px rgba(58, 46, 57, 0.12);
   --sidebar-bg: linear-gradient(180deg, #6e3854 0%, #8a4f71 60%, #9b72cf 100%);
@@ -230,6 +231,26 @@ body {
   font-weight: 800;
   margin-bottom: 16px;
 }
+
+/* ============================================================
+   PADRÃO VISUAL DE PAINEL
+   Padrão aplicado nos painéis de Vendas. Reutilize nos novos
+   painéis para manter consistência no app:
+
+   • Título do painel  → 20px (ex.: .venda-direita .panel h2 { font-size:20px })
+   • Borda de campos/caixas/botões → 1.5px solid var(--borda-forte)
+   • Cabeçalhos de tabela (th) → cor escura (var(--texto)) em vez de suave
+   • Formulário em coluna → display:flex; flex-direction:column; gap:10px
+   • Espaço label <-> campo dentro de .field → gap:6px
+   • Labels → font-weight:700
+
+   Exemplos usados hoje em Vendas:
+   .venda-direita .panel h2, .venda-esquerda .panel h2 → font-size:20px
+   #form-finalizar → flex column gap:10px; label → 700
+   .venda-esquerda .tabela th, #confirmacao-venda .tabela th → color:var(--texto)
+   select/.btn.secondary/.pagamento-btn/.total-box/.quantidade-input →
+     border:1.5px solid var(--borda-forte)
+   ============================================================ */
 
 .panel-head {
   display: flex;
@@ -477,7 +498,7 @@ input[readonly] {
 .btn.secondary {
   background: #fff;
   color: var(--texto);
-  border: 1.5px solid var(--borda);
+  border: 1.5px solid var(--borda-forte);
 }
 
 .btn.secondary:hover {
@@ -614,7 +635,7 @@ input[readonly] {
 
 select {
   padding: 11px 12px;
-  border: 1.5px solid var(--borda);
+  border: 1.5px solid var(--borda-forte);
   border-radius: 12px;
   font-size: 15px;
   color: var(--texto);
@@ -773,6 +794,7 @@ a.badge.zap-link:active {
   width: 100%;
   padding: 14px 18px;
   font-size: 16px;
+  border: 1.5px solid var(--borda-forte);
   border-radius: 14px;
 }
 
@@ -786,9 +808,13 @@ a.badge.zap-link:active {
   margin: 0 0 10px;
   font-size: 13px;
   font-weight: 800;
-  color: var(--texto-suave);
+  color: var(--texto);
   text-transform: uppercase;
   letter-spacing: 0.04em;
+}
+
+.venda-esquerda .tabela th {
+  color: var(--texto);
 }
 
 .total-itens {
@@ -904,7 +930,7 @@ a.badge.zap-link:active {
 .quantidade-input {
   width: 64px;
   padding: 8px 8px;
-  border: 1.5px solid var(--borda);
+  border: 1.5px solid var(--borda-forte);
   border-radius: 10px;
   font-size: 14px;
   text-align: center;
@@ -912,7 +938,7 @@ a.badge.zap-link:active {
 
 .total-box {
   background: #f8fafc;
-  border: 1px solid var(--borda);
+  border: 1.5px solid var(--borda-forte);
   border-radius: 12px;
   padding: 14px 16px;
   display: flex;
@@ -1087,11 +1113,51 @@ a.badge.zap-link:active {
   margin-top: 16px;
 }
 
+#confirmacao-venda .panel-head h2 {
+  font-size: 20px;
+}
+
+#confirmacao-venda .detalhe-cabecalho .rotulo {
+  color: var(--texto);
+}
+
+#confirmacao-venda .tabela th {
+  color: var(--texto);
+}
+
+#confirmacao-venda .detalhe-cabecalho {
+  border: 1.5px solid var(--borda-forte);
+}
+
 .venda-direita form .btn[type="submit"] {
   width: 100%;
   margin-top: 10px;
   padding: 13px 18px;
   font-size: 15px;
+}
+
+#form-finalizar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+#form-finalizar .field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+#form-finalizar label {
+  font-weight: 700;
+}
+
+.venda-direita .panel h2 {
+  font-size: 20px;
+}
+
+.venda-esquerda .panel h2 {
+  font-size: 20px;
 }
 
 /* ---- Responsivo vendas ---- */
@@ -1166,7 +1232,7 @@ a.badge.zap-link:active {
 
 .pagamento-btn {
   padding: 12px 8px;
-  border: 1.5px solid var(--borda);
+  border: 1.5px solid var(--borda-forte);
   border-radius: 10px;
   background: #fff;
   color: var(--texto);
