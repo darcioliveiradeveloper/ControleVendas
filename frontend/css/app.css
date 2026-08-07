@@ -289,6 +289,24 @@ body {
   gap: 16px;
 }
 
+input:not([type="checkbox"]):not([type="radio"]) {
+  padding: 11px 12px;
+  border: 1.5px solid var(--borda-forte);
+  border-radius: 12px;
+  font-size: 15px;
+  color: var(--texto);
+  background: #f8fafc;
+  font-family: inherit;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+input:not([type="checkbox"]):not([type="radio"]):focus {
+  outline: none;
+  border-color: var(--primaria);
+  box-shadow: 0 0 0 4px rgba(197, 106, 140, 0.15);
+  background: #fff;
+}
+
 .contato-linha {
   display: flex;
   gap: 8px;
@@ -302,6 +320,7 @@ body {
 
 .contato-linha input {
   flex: 1;
+  min-width: 0;
 }
 
 .campo-foto {
@@ -755,11 +774,31 @@ a.badge.zap-link {
   transition: filter 0.2s, transform 0.1s;
 }
 
-a.badge.zap-link:hover {
+.zap-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin-left: 6px;
+  background: var(--sucesso-suave);
+  color: var(--sucesso);
+  border-radius: 8px;
+  text-decoration: none;
+  vertical-align: middle;
+  transition: filter 0.2s, transform 0.1s;
+}
+
+.zap-link svg {
+  width: 15px;
+  height: 15px;
+}
+
+.zap-link:hover {
   filter: brightness(0.95);
 }
 
-a.badge.zap-link:active {
+.zap-link:active {
   transform: scale(0.97);
 }
 
@@ -836,6 +875,33 @@ a.badge.zap-link:active {
 
 .cliente-novo-linha select {
   flex: 1;
+}
+
+.cliente-novo-linha .btn {
+  padding: 11px 22px;
+  white-space: nowrap;
+}
+
+.aniversario-badge {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 3px 9px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  background: var(--borda);
+  color: var(--texto-suave);
+}
+
+.aniversario-badge.em-breve {
+  background: #fde2ec;
+  color: var(--primaria-escura);
+}
+
+.aniversario-badge.hoje {
+  background: var(--rosa);
+  color: #fff;
 }
 
 .parcela-campos {
@@ -1019,7 +1085,7 @@ a.badge.zap-link:active {
 }
 
 .modal-cabecalho h2 {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 800;
 }
 
@@ -1158,6 +1224,89 @@ a.badge.zap-link:active {
 
 .venda-esquerda .panel h2 {
   font-size: 20px;
+}
+
+/* ---- Clientes ---- */
+
+#tela-clientes .panel-head input {
+  border: 1.5px solid var(--borda-forte);
+  flex: 1;
+  max-width: none;
+}
+
+#tela-clientes .tabela th {
+  color: var(--texto);
+}
+
+#tela-clientes .tabela th:nth-child(2),
+#tela-clientes .tabela td:nth-child(2),
+#tela-clientes .tabela th:nth-child(4),
+#tela-clientes .tabela td:nth-child(4),
+#tela-clientes .tabela th:nth-child(5),
+#tela-clientes .tabela td:nth-child(5),
+#tela-clientes .tabela th:nth-child(6),
+#tela-clientes .tabela td:nth-child(6) {
+  text-align: center;
+}
+
+#tela-clientes .tabela th.acoes,
+#tela-clientes .tabela td.acoes {
+  text-align: center;
+}
+
+#form-cliente .field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+#form-cliente .form-grid {
+  grid-template-columns: 1.0fr 0.5fr 0.5fr;
+}
+
+#form-cliente .field input,
+#form-cliente .field select {
+  width: 100%;
+}
+
+#form-cliente .field label {
+  font-weight: 700;
+}
+
+#form-cliente .contato-linha {
+  align-items: stretch;
+}
+
+#form-cliente .help {
+  margin: 12px 0 0;
+}
+
+.btn.icone {
+  padding: 8px;
+  line-height: 0;
+  background: var(--fundo);
+  color: var(--texto);
+  border: 1.5px solid var(--borda-forte);
+  border-radius: 10px;
+}
+
+.btn.icone svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+.btn.icone:hover {
+  background: #e2e8f0;
+}
+
+.btn.icone.excluir {
+  background: var(--erro-suave);
+  color: var(--erro);
+}
+
+.btn.icone.excluir:hover {
+  background: #fecaca;
 }
 
 /* ---- Responsivo vendas ---- */

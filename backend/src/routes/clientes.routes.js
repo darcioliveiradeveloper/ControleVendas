@@ -12,11 +12,35 @@ function escaparRegex(texto) {
   return String(texto).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+function validarDataNascimento(valor) {
+  if (valor === null || valor === undefined || String(valor).trim() === '') return null;
+  const v = String(valor).trim();
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v);
+  if (!m) return 'Data de nascimento deve estar no formato dd/mm/aaaa.';
+  const ano = Number(m[1]);
+  const mes = Number(m[2]);
+  const dia = Number(m[3]);
+  const data = new Date(ano, mes - 1, dia);
+  if (data.getFullYear() !== ano || data.getMonth() !== mes - 1 || data.getDate() !== dia) {
+    return 'Data de nascimento inválida.';
+  }
+  if (ano < 1900) return 'Data de nascimento inválida.';
+  const hoje = new Date();
+  const hojeInicio = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+  if (data > hojeInicio) return 'A data de nascimento não pode estar no futuro.';
+  return null;
+}
+
 router.post('/', async (req, res) => {
   const { nome, telefone, whatsapp, email, data_nascimento } = req.body || {};
 
   if (!nome || !String(nome).trim()) {
     return res.status(400).json({ erro: 'O nome do cliente é obrigatório.' });
+  }
+
+  const erroData = validarDataNascimento(data_nascimento);
+  if (erroData) {
+    return res.status(400).json({ erro: erroData });
   }
 
   const cliente = await Cliente.create({
@@ -70,6 +94,13 @@ router.put('/:id', async (req, res) => {
   const novoWhatsapp = limpar(whatsapp);
   const novoEmail = limpar(email);
   const novoNascimento = limpar(data_nascimento);
+
+  if (data_nascimento !== undefined) {
+    const erroData = validarDataNascimento(novoNascimento);
+    if (erroData) {
+      return res.status(400).json({ erro: erroData });
+    }
+  }
 
   cliente.nome = novoNome;
   if (novoTelefone !== undefined) cliente.telefone = novoTelefone;
