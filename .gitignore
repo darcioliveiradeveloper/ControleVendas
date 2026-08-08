@@ -2,3 +2,15 @@
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Dependencias
+node_modules/
+
+# Seguranca - nunca commitar
+.env
+backend/.env
+
+# Arquivos gerados em tempo de execucao
+backend/uploads/*
+!backend/uploads/.gitkeep
+backend/backup/

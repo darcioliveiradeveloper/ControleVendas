@@ -57,6 +57,24 @@ function iniciarApp() {
   document.getElementById('usuario-nome').textContent = usuario && usuario.nome ? usuario.nome : 'Usuário';
 
   document.getElementById('btn-sair').addEventListener('click', sair);
+  document.getElementById('btn-backup').addEventListener('click', async () => {
+    const btn = document.getElementById('btn-backup');
+    btn.disabled = true;
+    btn.textContent = 'Backup...';
+    try {
+      const res = await requisicaoJSON(API() + '/backup', 'POST', null, obterToken());
+      const linhas = [`Backup concluído com sucesso!`, ``, `Arquivo salvo em:`, res.arquivo];
+      if (res.github) {
+        linhas.push(``, `Também enviado para o GitHub:`, res.github);
+      }
+      alert(linhas.join('\n'));
+    } catch (erro) {
+      tratarErro(erro);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '💾 Backup';
+    }
+  });
   document.getElementById('btn-menu').addEventListener('click', () => {
     document.getElementById('sidebar').classList.add('aberta');
     document.getElementById('overlay').classList.remove('hidden');

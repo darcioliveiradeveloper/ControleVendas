@@ -5,12 +5,14 @@ const express = require('express');
 const Produto = require('../models/Produto');
 const MovimentoEstoque = require('../models/MovimentoEstoque');
 const autenticar = require('../middleware/auth');
+const { PASTA_IMAGENS } = require('../config');
+const { salvarFoto, removerFotoId } = require('../fotos');
 const { proximoId } = require('../ids');
 const { agoraLocal, calcularPrecoVenda, calcularMargemPercentual, arredondar } = require('../utilidades');
 
 const router = express.Router();
 
-const PASTA_UPLOADS = path.join(__dirname, '..', '..', 'uploads');
+const PASTA_UPLOADS = PASTA_IMAGENS;
 fs.mkdirSync(PASTA_UPLOADS, { recursive: true });
 
 const storage = multer.diskStorage({
@@ -40,6 +42,15 @@ function removerFoto(caminho) {
   fs.unlink(arquivo, () => {});
 }
 
+async function removerFotoAntiga(caminho) {
+  if (!caminho) return;
+  if (String(caminho).startsWith('/api/fotos/')) {
+    await removerFotoId(String(caminho).split('/api/fotos/')[1]);
+  } else {
+    removerFoto(caminho);
+  }
+}
+
 async function baixarFoto(url) {
   if (!/^https?:\/\//i.test(String(url))) return null;
   try {
@@ -49,14 +60,15 @@ async function baixarFoto(url) {
     if (!tipo.startsWith('image/')) return null;
     const buf = Buffer.from(await res.arrayBuffer());
     if (buf.length > 2 * 1024 * 1024) return null;
-    const extMap = { 'image/jpeg': '.jpg', 'image/png': '.png', 'image/webp': '.webp', 'image/gif': '.gif' };
-    const ext = extMap[tipo] || '.jpg';
-    const nome = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
-    fs.writeFileSync(path.join(PASTA_UPLOADS, nome), buf);
-    return '/uploads/' + nome;
+    return { buffer: buf, tipo };
   } catch (e) {
     return null;
   }
+}
+
+async function guardarFoto(buffer, tipo) {
+  const id = await salvarFoto(buffer, tipo);
+  return '/api/fotos/' + id;
 }
 
 router.use(autenticar);
@@ -87,12 +99,17 @@ router.post('/', upload.single('foto'), async (req, res) => {
   }
   const estoqueNum = Math.max(0, parseInt(estoque, 10) || 0);
 
-  let foto = req.file ? '/uploads/' + req.file.filename : null;
-  if (!foto && req.body.foto_url) {
-    foto = await baixarFoto(req.body.foto_url);
-    if (!foto) {
+  let foto = null;
+  if (req.file) {
+    const buffer = fs.readFileSync(req.file.path);
+    fs.unlink(req.file.path, () => {});
+    foto = await guardarFoto(buffer, req.file.mimetype);
+  } else if (req.body.foto_url) {
+    const baixada = await baixarFoto(req.body.foto_url);
+    if (!baixada) {
       return res.status(400).json({ erro: 'Não foi possível baixar a imagem do link informado.' });
     }
+    foto = await guardarFoto(baixada.buffer, baixada.tipo);
   }
 
   const produto = await Produto.create({
@@ -168,18 +185,22 @@ router.put('/:id', upload.single('foto'), async (req, res) => {
 
   let fotoNova = produto.foto;
   if (req.file) {
-    fotoNova = '/uploads/' + req.file.filename;
-    removerFoto(produto.foto);
+    const buffer = fs.readFileSync(req.file.path);
+    fs.unlink(req.file.path, () => {});
+    const caminho = await guardarFoto(buffer, req.file.mimetype);
+    await removerFotoAntiga(produto.foto);
+    fotoNova = caminho;
   } else if (manter_foto === 'false') {
-    removerFoto(produto.foto);
+    await removerFotoAntiga(produto.foto);
     fotoNova = null;
   } else if (!req.file && req.body.foto_url) {
     const baixada = await baixarFoto(req.body.foto_url);
     if (!baixada) {
       return res.status(400).json({ erro: 'Não foi possível baixar a imagem do link informado.' });
     }
-    removerFoto(produto.foto);
-    fotoNova = baixada;
+    const caminho = await guardarFoto(baixada.buffer, baixada.tipo);
+    await removerFotoAntiga(produto.foto);
+    fotoNova = caminho;
   }
 
   produto.nome = novoNome;
@@ -207,7 +228,7 @@ router.delete('/:id', async (req, res) => {
   }
   await Produto.deleteOne({ _id: id });
   await MovimentoEstoque.deleteMany({ produto_id: id });
-  removerFoto(produto.foto);
+  await removerFotoAntiga(produto.foto);
   return res.status(204).send();
 });
 

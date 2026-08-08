@@ -163,6 +163,27 @@ body {
   font-weight: 600;
 }
 
+.sidebar-user-acoes {
+  display: flex;
+  gap: 8px;
+}
+
+.sidebar-user-acoes .btn {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.sidebar-user-acoes .btn:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.sidebar-user-acoes .btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
 /* ---- Main / topbar ---- */
 
 .main {
@@ -615,28 +636,11 @@ input[readonly] {
   gap: 8px;
   padding: 10px 12px;
   border-top: 1px solid var(--borda);
+  justify-content: center;
 }
 
-.btn.editar {
-  background: var(--fundo);
-  color: var(--texto);
-  flex: 1;
-  padding: 8px;
-  font-size: 13px;
-  border-radius: 10px;
-}
-
-.btn.editar:hover {
-  background: #e2e8f0;
-}
-
-.btn.excluir {
-  background: var(--erro-suave);
-  color: var(--erro);
-  flex: 1;
-  padding: 8px;
-  font-size: 13px;
-  border-radius: 10px;
+#tela-produtos .produto-card {
+  border: 1.5px solid var(--borda-forte);
 }
 
 .btn.excluir:hover {
@@ -1229,6 +1233,12 @@ a.badge.zap-link {
 /* ---- Clientes ---- */
 
 #tela-clientes .panel-head input {
+  border: 1.5px solid var(--borda-forte);
+  flex: 1;
+  max-width: none;
+}
+
+#tela-produtos .panel-head input {
   border: 1.5px solid var(--borda-forte);
   flex: 1;
   max-width: none;
