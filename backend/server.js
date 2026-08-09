@@ -27,7 +27,17 @@ app.use(cors());
 app.use(express.json());
 app.use('/uploads', express.static(PASTA_IMAGENS));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-app.use(express.static(frontendDir));
+app.use(
+  express.static(frontendDir, {
+    etag: true,
+    maxAge: 0,
+    setHeaders: (res, caminho) => {
+      if (/\.(css|js|html)$/i.test(caminho)) {
+        res.setHeader('Cache-Control', 'no-cache');
+      }
+    },
+  })
+);
 
 app.use('/api/auth', authRoutes);
 app.use('/api/produtos', produtosRoutes);

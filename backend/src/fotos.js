@@ -21,20 +21,30 @@ function salvarFoto(buffer, contentType) {
   });
 }
 
-function servirFoto(id, res) {
-  const oid = new mongoose.Types.ObjectId(String(id));
+async function servirFoto(id, res) {
+  let oid;
+  try {
+    oid = new mongoose.Types.ObjectId(String(id));
+  } catch (e) {
+    return res.status(400).json({ erro: 'Imagem inválida.' });
+  }
+  let arquivos;
+  try {
+    arquivos = await bucket().find({ _id: oid }).toArray();
+  } catch (e) {
+    return res.status(500).json({ erro: 'Erro ao buscar imagem.' });
+  }
+  if (!arquivos || !arquivos.length) {
+    return res.status(404).json({ erro: 'Imagem não encontrada.' });
+  }
+  res.set('Content-Type', arquivos[0].contentType || 'image/jpeg');
+  res.set('Cache-Control', 'public, max-age=86400');
   bucket()
-    .find({ _id: oid })
-    .toArray((erro, arquivos) => {
-      if (erro || !arquivos || !arquivos.length) {
-        return res.status(404).json({ erro: 'Imagem não encontrada.' });
-      }
-      res.set('Content-Type', arquivos[0].contentType || 'image/jpeg');
-      res.set('Cache-Control', 'public, max-age=86400');
-      bucket()
-        .openDownloadStream(oid)
-        .pipe(res);
-    });
+    .openDownloadStream(oid)
+    .on('error', () => {
+      if (!res.headersSent) res.status(500).json({ erro: 'Erro ao baixar imagem.' });
+    })
+    .pipe(res);
 }
 
 async function removerFotoId(id) {

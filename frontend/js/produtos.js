@@ -86,6 +86,36 @@ function renderProdutos() {
     .join('');
 }
 
+function escolherOrigemFoto(aoEscolher) {
+  const dialogo = document.createElement('div');
+  dialogo.className = 'modal';
+  dialogo.innerHTML = `
+    <div class="modal-conteudo modal-foto-origem">
+      <div class="modal-cabecalho">
+        <h3>Origem da foto</h3>
+        <button class="modal-fechar" type="button">×</button>
+      </div>
+      <div class="foto-origem-opcoes">
+        <button type="button" class="btn secondary" data-origem="camera">Câmera</button>
+        <button type="button" class="btn secondary" data-origem="arquivo">Arquivo</button>
+        <button type="button" class="btn secondary" data-origem="internet">Internet</button>
+      </div>
+    </div>
+  `;
+  const fechar = () => dialogo.remove();
+  dialogo.querySelector('.modal-fechar').addEventListener('click', fechar);
+  dialogo.querySelectorAll('.foto-origem-opcoes button').forEach((b) => {
+    b.addEventListener('click', () => {
+      fechar();
+      aoEscolher(b.dataset.origem);
+    });
+  });
+  dialogo.addEventListener('click', (e) => {
+    if (e.target === dialogo) fechar();
+  });
+  document.body.appendChild(dialogo);
+}
+
 function abrirFormProduto(id) {
   const produto = id ? produtosAtuais.find((p) => p.id === id) : null;
 
@@ -98,84 +128,80 @@ function abrirFormProduto(id) {
         <button class="modal-fechar" type="button">×</button>
       </div>
       <form id="form-produto">
-        <div class="form-grid">
-          <div class="field">
-            <label>Nome *</label>
-            <input name="nome" type="text" required placeholder="Ex.: Body brilho" value="${produto ? (produto.nome || '') : ''}" />
+        <div class="produto-cabeca">
+          <div class="foto-bloco">
+            <div class="campo-foto">
+              <label>Foto</label>
+              <div class="preview-foto" id="preview-foto">${produto && produto.foto ? `<img src="${urlFoto(produto.foto)}" />` : `<span class="produto-sem-foto">${SVG_SEM_FOTO}</span>`}</div>
+            </div>
+            <div class="foto-opcoes">
+              <button type="button" class="btn secondary" id="btn-foto">Foto</button>
+              <button type="button" class="btn secondary" id="btn-remover-foto">Remover</button>
+            </div>
           </div>
-          <div class="field">
-            <label>Marca</label>
-            <input name="marca" type="text" placeholder="Ex.: Glow" value="${produto ? (produto.marca || '') : ''}" />
+          <div class="produto-info">
+            <div class="field campo-nome">
+              <label>Nome *</label>
+              <input name="nome" type="text" required placeholder="Ex.: Body brilho" value="${produto ? (produto.nome || '') : ''}" />
+            </div>
+            <div class="field campo-marca">
+              <label>Marca</label>
+              <input name="marca" type="text" maxlength="10" placeholder="Ex.: Glow" value="${produto ? (produto.marca || '') : ''}" />
+            </div>
+            <div class="field campo-tipo">
+              <label>Tipo</label>
+              <input name="tipo" type="text" maxlength="10" placeholder="Ex.: Body, Batom..." value="${produto ? (produto.tipo || '') : ''}" />
+            </div>
+            <div class="field campo-tamanho">
+              <label>Tamanho</label>
+              <input name="tamanho" type="text" maxlength="6" placeholder="Ex.: P, M, G" value="${produto ? (produto.tamanho || '') : ''}" />
+            </div>
+            <div class="field campo-descricao">
+              <label>Descrição</label>
+              <textarea name="descricao" rows="2">${produto ? (produto.descricao || '') : ''}</textarea>
+            </div>
+            <div class="field campo-observacoes">
+              <label>Observações</label>
+              <textarea name="observacoes" rows="2" placeholder="Ex.: vendido em kit, validade, fornecedor...">${produto ? (produto.observacoes || '') : ''}</textarea>
+            </div>
           </div>
-          <div class="field">
-            <label>Tipo</label>
-            <input name="tipo" type="text" placeholder="Ex.: Body, Batom..." value="${produto ? (produto.tipo || '') : ''}" />
-          </div>
-          <div class="field">
-            <label>Tamanho</label>
-            <input name="tamanho" type="text" placeholder="Ex.: P, M, G, 200ml" value="${produto ? (produto.tamanho || '') : ''}" />
-          </div>
-          <div class="field">
-            <label>Descrição</label>
-            <textarea name="descricao" rows="2">${produto ? (produto.descricao || '') : ''}</textarea>
-          </div>
-          <div class="field">
-            <label>Observações</label>
-            <textarea name="observacoes" rows="2" placeholder="Ex.: vendido em kit, validade, fornecedor...">${produto ? (produto.observacoes || '') : ''}</textarea>
-          </div>
+          <input id="input-foto-camera" type="file" accept="image/*" capture="environment" class="foto-input-escondido" />
+          <input id="input-foto" type="file" accept="image/*" class="foto-input-escondido" />
+        </div>
 
+        <div class="form-grid">
           <div class="bloco-precos">
             <label>Preços</label>
             <div class="modo-preco">
-              <button type="button" class="ativo" data-modo="percentual">Margem (%)</button>
+              <button type="button" class="ativo" data-modo="total">Venda (R$)</button>
               <button type="button" data-modo="valor">Lucro (R$)</button>
-              <button type="button" data-modo="total">Venda (R$)</button>
+              <button type="button" data-modo="percentual">Margem (%)</button>
             </div>
-            <div class="precos-grid">
-              <div class="field">
-                <label>Custo (R$) *</label>
-                <input name="preco_custo" type="number" step="0.01" min="0" required placeholder="0,00" value="${produto ? produto.preco_custo : ''}" />
+            <div class="precos-linha">
+              <div class="precos-grid">
+                <div class="field">
+                  <label>Custo (R$) *</label>
+                  <input name="preco_custo" type="number" step="0.01" min="0" required placeholder="0,00" value="${produto ? produto.preco_custo : ''}" />
+                </div>
+                <div class="field">
+                  <label>Venda (R$)</label>
+                  <input name="preco_venda" type="number" step="0.01" min="0" placeholder="0,00" value="${produto ? produto.preco_venda : ''}" />
+                </div>
+                <div class="field">
+                  <label>Lucro (R$)</label>
+                  <input name="lucro_valor" type="number" step="0.01" placeholder="0,00" value="${produto ? Math.round((produto.preco_venda - produto.preco_custo) * 100) / 100 : ''}" />
+                </div>
+                <div class="field">
+                  <label>Margem (%)</label>
+                  <input name="margem_percentual" type="number" step="0.01" min="0" placeholder="0,00" value="${produto ? produto.margem_percentual : ''}" />
+                </div>
               </div>
-              <div class="field">
-                <label>Margem (%)</label>
-                <input name="margem_percentual" type="number" step="0.01" min="0" placeholder="0,00" value="${produto ? produto.margem_percentual : ''}" />
-              </div>
-              <div class="field">
-                <label>Venda (R$)</label>
-                <input name="preco_venda" type="number" step="0.01" min="0" placeholder="0,00" value="${produto ? produto.preco_venda : ''}" />
-              </div>
-              <div class="field">
-                <label>Lucro (R$)</label>
-                <input name="lucro_valor" type="number" step="0.01" placeholder="0,00" value="${produto ? Math.round((produto.preco_venda - produto.preco_custo) * 100) / 100 : ''}" />
+              <div class="field campo-estoque">
+                <label>Estoque ${produto ? 'atual' : 'inicial'}</label>
+                <input name="estoque" type="number" min="0" placeholder="0" value="${produto ? produto.estoque : ''}" />
               </div>
             </div>
             <p class="help">Digite o custo e o valor do modo selecionado. O sistema calcula os demais automaticamente.</p>
-          </div>
-
-          <div class="field">
-            <label>Estoque ${produto ? 'atual' : 'inicial'}</label>
-            <input name="estoque" type="number" min="0" placeholder="0" value="${produto ? produto.estoque : ''}" />
-          </div>
-        </div>
-
-        <div class="campo-foto">
-          <label>Foto</label>
-          <div class="foto-linha">
-            <div class="preview-foto" id="preview-foto">${produto && produto.foto ? `<img src="${urlFoto(produto.foto)}" />` : `<span class="produto-sem-foto">${SVG_SEM_FOTO}</span>`}</div>
-            <div class="foto-controles">
-              <div class="foto-opcoes">
-                <button type="button" class="btn secondary" id="btn-foto-camera">Câmera</button>
-                <button type="button" class="btn secondary" id="btn-foto-arquivo">Arquivo</button>
-                <button type="button" class="btn secondary" id="btn-foto-link">Buscar na internet</button>
-                ${produto && produto.foto ? '<button type="button" class="btn secondary" id="btn-remover-foto">Remover foto</button>' : ''}
-              </div>
-              <input id="input-foto-camera" type="file" accept="image/*" capture="environment" class="foto-input-escondido" />
-              <input id="input-foto" type="file" accept="image/*" class="foto-input-escondido" />
-              <div class="foto-url" id="foto-url" hidden>
-                <input name="foto_url" type="url" placeholder="Cole aqui o link da imagem" />
-                <p class="help">Abriu o Google com o nome do produto? Escolha a imagem, copie o endereço e cole aqui.</p>
-              </div>
-            </div>
           </div>
         </div>
 
@@ -202,12 +228,25 @@ function abrirFormProduto(id) {
   const inputFotoCamera = modal.querySelector('#input-foto-camera');
   const inputFoto = modal.querySelector('#input-foto');
   const preview = modal.querySelector('#preview-foto');
-  const areaUrl = modal.querySelector('#foto-url');
-  const inputUrl = form.elements.foto_url;
 
-  let modo = 'percentual';
+  let modo = 'total';
   let fotoSelecionada = null;
   let fotoRemovida = false;
+
+  const botaoRemover = modal.querySelector('#btn-remover-foto');
+
+  function atualizarBotaoRemover() {
+    botaoRemover.disabled = !(!!(produto && produto.foto) || !!fotoSelecionada);
+  }
+
+  function removerFoto() {
+    fotoRemovida = true;
+    fotoSelecionada = null;
+    inputFotoCamera.value = '';
+    inputFoto.value = '';
+    preview.innerHTML = `<span class="produto-sem-foto">${SVG_SEM_FOTO}</span>`;
+    atualizarBotaoRemover();
+  }
 
   const num = (el) => Number(el.value) || 0;
   const round2 = (n) => Math.round(n * 100) / 100;
@@ -256,29 +295,28 @@ function abrirFormProduto(id) {
   inputs.venda.addEventListener('input', sincronizar);
   aplicarModo();
 
-  modal.querySelector('#btn-foto-camera').addEventListener('click', () => {
-    inputFotoCamera.click();
-  });
-  modal.querySelector('#btn-foto-arquivo').addEventListener('click', () => {
-    inputFoto.click();
-  });
-  modal.querySelector('#btn-foto-link').addEventListener('click', () => {
-    const nome = (form.elements.nome.value || '').trim();
-    window.open('https://www.google.com/search?tbm=isch&q=' + encodeURIComponent(nome ? nome + ' imagem' : 'imagem'), '_blank');
-    areaUrl.hidden = false;
-    inputUrl.focus();
+  modal.querySelector('#btn-foto').addEventListener('click', () => {
+    escolherOrigemFoto((origem) => {
+      if (origem === 'camera') {
+        inputFotoCamera.click();
+      } else if (origem === 'arquivo') {
+        inputFoto.click();
+      } else {
+        const nome = (form.elements.nome.value || '').trim();
+        window.open('https://www.google.com/search?tbm=isch&q=' + encodeURIComponent(nome ? nome + ' imagem' : 'imagem'), '_blank');
+      }
+    });
   });
 
   function tratarArquivo(arquivo) {
     if (!arquivo) return;
     fotoSelecionada = arquivo;
-    inputUrl.value = '';
-    areaUrl.hidden = true;
     const leitor = new FileReader();
     leitor.onload = () => {
       preview.innerHTML = `<img src="${leitor.result}" />`;
     };
     leitor.readAsDataURL(arquivo);
+    atualizarBotaoRemover();
   }
 
   inputFotoCamera.addEventListener('change', () => {
@@ -290,36 +328,8 @@ function abrirFormProduto(id) {
     inputFoto.value = '';
   });
 
-  let timeoutUrl;
-  inputUrl.addEventListener('input', () => {
-    clearTimeout(timeoutUrl);
-    timeoutUrl = setTimeout(() => {
-      const url = inputUrl.value.trim();
-      if (!/^https?:\/\//i.test(url)) return;
-      const img = new Image();
-      img.onload = () => {
-        preview.innerHTML = `<img src="${url}" />`;
-        fotoSelecionada = null;
-        inputFotoCamera.value = '';
-        inputFoto.value = '';
-        fotoRemovida = false;
-      };
-      img.src = url;
-    }, 500);
-  });
-
-  const botaoRemover = modal.querySelector('#btn-remover-foto');
-  if (botaoRemover) {
-    botaoRemover.addEventListener('click', () => {
-      fotoRemovida = true;
-      fotoSelecionada = null;
-      inputFotoCamera.value = '';
-      inputFoto.value = '';
-      inputUrl.value = '';
-      areaUrl.hidden = true;
-      preview.innerHTML = `<span class="produto-sem-foto">${SVG_SEM_FOTO}</span>`;
-    });
-  }
+  botaoRemover.addEventListener('click', removerFoto);
+  atualizarBotaoRemover();
 
   const fechar = () => modal.remove();
   modal.querySelector('.modal-fechar').addEventListener('click', fechar);
@@ -336,18 +346,14 @@ function abrirFormProduto(id) {
     btnSalvar.textContent = 'Salvando...';
     const formData = new FormData(form);
     const arquivo = fotoSelecionada;
-    const url = inputUrl.value.trim();
 
     if (arquivo) {
       formData.set('foto', arquivo, arquivo.name);
     } else {
       formData.delete('foto');
     }
-    if (!/^https?:\/\//i.test(url)) {
-      formData.delete('foto_url');
-    }
     if (produto) {
-      formData.set('manter_foto', (!fotoRemovida && !arquivo && !/^https?:\/\//i.test(url)) ? 'true' : 'false');
+      formData.set('manter_foto', (!fotoRemovida && !arquivo) ? 'true' : 'false');
     }
     try {
       if (produto) {

@@ -310,6 +310,75 @@ body {
   gap: 16px;
 }
 
+#form-produto .field label {
+  font-weight: 700;
+}
+
+#form-produto .produto-cabeca {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+#form-produto .produto-cabeca .foto-bloco {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+#form-produto .produto-cabeca .campo-foto {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+#form-produto .foto-opcoes {
+  flex-direction: column;
+  flex-wrap: nowrap;
+  align-items: stretch;
+}
+
+#form-produto .foto-opcoes .btn {
+  flex: none;
+  padding: 7px 10px;
+}
+
+#form-produto .produto-info {
+  flex: 1;
+  min-width: 260px;
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 10px;
+  align-items: start;
+}
+
+#form-produto .produto-info .campo-nome {
+  grid-column: span 8;
+}
+
+#form-produto .produto-info .campo-marca,
+#form-produto .produto-info .campo-tipo {
+  grid-column: span 3;
+}
+
+#form-produto .produto-info .campo-tamanho {
+  grid-column: span 2;
+}
+
+#form-produto .produto-info .campo-descricao,
+#form-produto .produto-info .campo-observacoes {
+  grid-column: span 4;
+}
+
+#form-produto .produto-info .field input,
+#form-produto .produto-info textarea {
+  width: 100%;
+  padding: 9px 12px;
+  font-size: 14px;
+}
+
 input:not([type="checkbox"]):not([type="radio"]) {
   padding: 11px 12px;
   border: 1.5px solid var(--borda-forte);
@@ -349,8 +418,8 @@ input:not([type="checkbox"]):not([type="radio"]):focus {
 }
 
 .preview-foto {
-  width: 120px;
-  height: 120px;
+  width: 140px;
+  height: 140px;
   border: 2px dashed var(--borda);
   border-radius: 14px;
   display: flex;
@@ -370,7 +439,7 @@ input:not([type="checkbox"]):not([type="radio"]):focus {
 
 textarea {
   padding: 12px 14px;
-  border: 1.5px solid var(--borda);
+  border: 1.5px solid var(--borda-forte);
   border-radius: 12px;
   font-size: 15px;
   color: var(--texto);
@@ -396,24 +465,24 @@ input[readonly] {
 .form-actions {
   display: flex;
   gap: 10px;
-  margin-top: 18px;
+  margin-top: 10px;
   flex-wrap: wrap;
 }
 
 .bloco-precos {
   grid-column: 1 / -1;
-  border: 1.5px dashed var(--borda);
+  border: 1.5px solid var(--borda-forte);
   border-radius: 14px;
-  padding: 14px;
-  background: #fcfafb;
+  padding: 10px;
+  background: #fdf9fb;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 6px;
 }
 
 .bloco-precos > label {
-  font-size: 13px;
-  font-weight: 700;
+  font-size: 16px;
+  font-weight: 800;
   color: var(--texto);
 }
 
@@ -424,11 +493,11 @@ input[readonly] {
 }
 
 .modo-preco button {
-  border: 1.5px solid var(--borda);
+  border: 1.5px solid var(--borda-forte);
   background: #fff;
   color: var(--texto-suave);
   border-radius: 10px;
-  padding: 8px 12px;
+  padding: 6px 10px;
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
@@ -444,8 +513,35 @@ input[readonly] {
 
 .precos-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(4, minmax(90px, 1fr));
+  gap: 6px;
+  max-width: 400px;
+}
+
+.precos-grid .field input {
+  width: 100%;
+  padding: 6px 10px;
+  font-size: 13px;
+  min-width: 0;
+}
+
+.precos-linha {
+  display: flex;
+  gap: 24px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.campo-estoque {
+  width: fit-content;
+  min-width: 60px;
+}
+
+.campo-estoque input {
+  width: 60px;
+  padding: 6px 8px;
+  font-size: 13px;
+  text-align: center;
 }
 
 .foto-linha {
@@ -469,32 +565,11 @@ input[readonly] {
   flex-wrap: wrap;
 }
 
-.foto-url {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.foto-url[hidden] {
-  display: none;
-}
-
-.foto-url input {
-  padding: 12px 14px;
-  border: 1.5px solid var(--borda);
-  border-radius: 12px;
-  font-size: 15px;
-  color: var(--texto);
-  background: #f8fafc;
-  width: 100%;
-  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
-}
-
-.foto-url input:focus {
-  outline: none;
-  border-color: var(--primaria);
-  box-shadow: 0 0 0 4px rgba(197, 106, 140, 0.15);
-  background: #fff;
+.foto-opcoes .btn {
+  flex: 1;
+  min-width: 96px;
+  padding: 9px 10px;
+  font-size: 13px;
 }
 
 .foto-input-escondido {
@@ -506,6 +581,21 @@ input[readonly] {
   clip: rect(0 0 0 0);
   clip-path: inset(50%);
   white-space: nowrap;
+}
+
+.foto-origem-opcoes {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.foto-origem-opcoes .btn {
+  padding: 12px 14px;
+  font-size: 14px;
+}
+
+.modal-foto-origem {
+  max-width: 320px;
 }
 
 /* ---- Botões ---- */
@@ -1065,7 +1155,7 @@ a.badge.zap-link {
   max-width: 740px;
   max-height: 90vh;
   overflow-y: auto;
-  padding: 24px;
+  padding: 12px 16px 16px;
   box-shadow: 0 30px 60px -15px rgba(15, 23, 42, 0.5);
   animation: modalEntrar 0.25s ease;
 }
@@ -1085,11 +1175,11 @@ a.badge.zap-link {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 18px;
+  margin-bottom: 4px;
 }
 
 .modal-cabecalho h2 {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 800;
 }
 
@@ -1097,9 +1187,9 @@ a.badge.zap-link {
   border: none;
   background: var(--fundo);
   border-radius: 10px;
-  width: 36px;
-  height: 36px;
-  font-size: 20px;
+  width: 32px;
+  height: 32px;
+  font-size: 18px;
   cursor: pointer;
   color: var(--texto);
   transition: background 0.15s;
@@ -1466,6 +1556,27 @@ a.badge.zap-link {
 /* ---- Responsivo ---- */
 
 @media (max-width: 760px) {
+  #form-produto .produto-info {
+    grid-template-columns: 1fr;
+  }
+
+  #form-produto .produto-info .campo-nome,
+  #form-produto .produto-info .campo-marca,
+  #form-produto .produto-info .campo-tipo,
+  #form-produto .produto-info .campo-tamanho,
+  #form-produto .produto-info .campo-descricao,
+  #form-produto .produto-info .campo-observacoes {
+    grid-column: 1 / -1;
+  }
+
+  .precos-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .foto-opcoes .btn {
+    flex: 1 1 40%;
+  }
+
   .tabela th.col-cadastro,
   .tabela td.col-cadastro {
     display: none;
