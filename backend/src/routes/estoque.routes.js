@@ -34,6 +34,8 @@ router.post('/movimentos', async (req, res) => {
     ? Number(custo_unitario) || 0
     : null;
 
+  const estoqueAntes = produto.estoque;
+
   try {
     if (tipo === 'saida') {
       const atualizado = await Produto.findOneAndUpdate(
@@ -58,6 +60,10 @@ router.post('/movimentos', async (req, res) => {
     return res.status(500).json({ erro: 'Erro ao registrar movimento.' });
   }
 
+  const custoAntigo = Number(produto.preco_custo) || 0;
+  const custoNovo = tipo === 'entrada' && custo > 0 ? custo : custoAntigo;
+  const variacao = tipo === 'entrada' ? arredondar(custoNovo - custoAntigo) : null;
+
   const movimento = await MovimentoEstoque.create({
     _id: await proximoId('movimentos_estoque'),
     produto_id: idProduto,
@@ -65,6 +71,11 @@ router.post('/movimentos', async (req, res) => {
     tipo,
     quantidade: qtd,
     custo_unitario: custo,
+    estoque_antes: estoqueAntes,
+    estoque_depois: estoqueAntes + (tipo === 'entrada' ? qtd : -qtd),
+    custo_antigo: custoAntigo,
+    custo_novo: custoNovo,
+    variacao_valor: variacao,
     observacao: observacao ? String(observacao).trim() || null : null,
     criado_em: agoraLocal(),
   });
@@ -83,6 +94,82 @@ router.get('/movimentos', async (req, res) => {
   return res.json(linhas);
 });
 
+router.put('/movimentos/:id', async (req, res) => {
+  const { produto_id, quantidade, custo_unitario, observacao } = req.body || {};
+
+  const movimento = await MovimentoEstoque.findById(Number(req.params.id));
+  if (!movimento) {
+    return res.status(404).json({ erro: 'Movimento não encontrado.' });
+  }
+
+  const idNovo = Number(produto_id) || movimento.produto_id;
+  const qtd = parseInt(quantidade, 10);
+  if (!qtd || qtd <= 0) {
+    return res.status(400).json({ erro: 'A quantidade deve ser maior que zero.' });
+  }
+
+  try {
+    const produtoAntigo = await Produto.findById(movimento.produto_id);
+    if (produtoAntigo) {
+      const estoqueReverso =
+        movimento.tipo === 'entrada'
+          ? produtoAntigo.estoque - movimento.quantidade
+          : produtoAntigo.estoque + movimento.quantidade;
+      if (estoqueReverso < 0) {
+        return res.status(400).json({
+          erro: 'Não é possível editar: o estoque atual não permite desfazer este movimento.',
+        });
+      }
+      await Produto.updateOne(
+        { _id: produtoAntigo._id },
+        { $set: { estoque: estoqueReverso, atualizado_em: agoraLocal() } }
+      );
+    }
+
+    const produtoNovo = await Produto.findById(idNovo);
+    if (!produtoNovo) {
+      return res.status(404).json({ erro: 'Produto não encontrado.' });
+    }
+
+    const custo = custo_unitario !== undefined ? Number(custo_unitario) || 0 : null;
+    const estoqueAntes = Number(produtoNovo.estoque) || 0;
+    const custoAntigo = Number(produtoNovo.preco_custo) || 0;
+    const custoNovo = custo !== null && custo > 0 ? custo : custoAntigo;
+    const variacao = arredondar(custoNovo - custoAntigo);
+
+    const alteracoes = { $inc: { estoque: qtd }, $set: { atualizado_em: agoraLocal() } };
+    if (custo !== null && custo > 0) {
+      alteracoes.$set.preco_custo = custo;
+      alteracoes.$set.preco_venda = arredondar(custo * (1 + produtoNovo.margem_percentual / 100));
+    }
+    await Produto.updateOne({ _id: produtoNovo._id }, alteracoes);
+
+    await MovimentoEstoque.updateOne(
+      { _id: movimento._id },
+      {
+        $set: {
+          produto_id: idNovo,
+          produto_nome: produtoNovo.nome,
+          tipo: 'entrada',
+          quantidade: qtd,
+          custo_unitario: custo,
+          estoque_antes: estoqueAntes,
+          estoque_depois: estoqueAntes + qtd,
+          custo_antigo: custoAntigo,
+          custo_novo: custoNovo,
+          variacao_valor: variacao,
+          observacao: observacao ? String(observacao).trim() || null : null,
+        },
+      }
+    );
+  } catch (erro) {
+    return res.status(500).json({ erro: 'Erro ao editar movimento.' });
+  }
+
+  const novoProduto = await Produto.findById(idNovo);
+  return res.json({ ok: true, estoque_atual: novoProduto.estoque });
+});
+
 router.delete('/movimentos/:id', async (req, res) => {
   const movimento = await MovimentoEstoque.findById(Number(req.params.id));
   if (!movimento) {
@@ -99,7 +186,7 @@ router.delete('/movimentos/:id', async (req, res) => {
 
   if (novoEstoque < 0) {
     return res.status(400).json({
-      erro: 'Não é possível estornar: o estoque atual não permite desfazer esta entrada.',
+      erro: 'Não é possível excluir: o estoque atual não permite desfazer este movimento.',
     });
   }
 
