@@ -21,7 +21,7 @@ async function carregarTelaVendas() {
         <div class="panel">
           <h2>Venda / Encomenda</h2>
           <div class="busca-relativa">
-            <input id="busca-produto-venda" class="busca-produto-grande" type="search" placeholder="Buscar produto..." />
+            <input id="busca-produto-venda" class="busca-produto-grande" type="search" placeholder="Buscar Produto..." />
             <div id="resultado-busca" class="resultado-busca hidden"></div>
           </div>
 
@@ -79,7 +79,7 @@ async function carregarTelaVendas() {
                 <select name="cliente_id">
                   <option value="">Cliente avulso</option>
                 </select>
-                <button type="button" class="btn small secondary" id="btn-novo-cliente">+ Novo</button>
+                <button type="button" class="btn small secondary" id="btn-novo-cliente">+ Novo Cliente</button>
               </div>
             </div>
             <p class="help" id="info-pontos-cliente" style="margin-top:-4px">Cliente avulso — sem pontos.</p>

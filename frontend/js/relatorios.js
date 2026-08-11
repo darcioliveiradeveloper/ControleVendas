@@ -6,9 +6,14 @@ async function carregarTelaRelatorios() {
   const tela = document.getElementById('tela-relatorios');
   tela.innerHTML = `
     <div class="panel">
-      <div class="panel-head">
-        <h2>Relatórios</h2>
-        <div class="filtro-periodo">
+      <div class="panel-head" style="justify-content:flex-start">
+        <div class="filtros-tipo" style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <button class="btn small secondary" data-tipo="vendas">Vendas</button>
+          <button class="btn small secondary" data-tipo="gastos">Gastos (estoque)</button>
+          <button class="btn small secondary" data-tipo="parcelas">Parcelas</button>
+          <button class="btn small secondary" data-tipo="despesas">Despesas</button>
+        </div>
+        <div class="filtro-periodo" style="align-items:flex-start">
           <div class="field">
             <label>De</label>
             <input id="rel-inicio" type="date" />
@@ -17,15 +22,11 @@ async function carregarTelaRelatorios() {
             <label>Até</label>
             <input id="rel-fim" type="date" />
           </div>
-          <button class="btn primary" id="btn-aplicar-filtro">Aplicar</button>
-          <button class="btn secondary" id="btn-limpar-filtro">Limpar</button>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <button class="btn primary" id="btn-aplicar-filtro">Aplicar</button>
+            <button class="btn secondary" id="btn-limpar-filtro">Limpar</button>
+          </div>
         </div>
-      </div>
-      <div class="filtros" style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn small secondary" data-tipo="vendas">Vendas</button>
-        <button class="btn small secondary" data-tipo="parcelas">Parcelas</button>
-        <button class="btn small secondary" data-tipo="gastos">Gastos (estoque)</button>
-        <button class="btn small secondary" data-tipo="despesas">Despesas</button>
       </div>
       <div id="conteudo-relatorio" style="margin-top:16px"></div>
     </div>
@@ -62,8 +63,12 @@ async function carregarRelatorio() {
 
   try {
     if (relatorioTipo === 'vendas') {
-      const dados = await requisicaoJSON(`${API()}/relatorios/vendas?${params}`, 'GET', null, obterToken());
-      conteudo.innerHTML = renderVendasRelatorio(dados);
+      const [dadosVendas, dadosDespesas, produtos] = await Promise.all([
+        requisicaoJSON(`${API()}/relatorios/vendas?${params}`, 'GET', null, obterToken()),
+        requisicaoJSON(`${API()}/relatorios/despesas?${params}`, 'GET', null, obterToken()),
+        requisicaoJSON(`${API()}/produtos`, 'GET', null, obterToken()),
+      ]);
+      conteudo.innerHTML = renderVendasRelatorio(dadosVendas, dadosDespesas, produtos);
     } else if (relatorioTipo === 'parcelas') {
       const dados = await requisicaoJSON(`${API()}/relatorios/parcelas?${params}`, 'GET', null, obterToken());
       conteudo.innerHTML = renderParcelasRelatorio(dados);
@@ -79,13 +84,25 @@ async function carregarRelatorio() {
   }
 }
 
-function renderVendasRelatorio(vendas) {
+function lucroPresumidoEstoque(produtos) {
+  return (produtos || []).reduce((s, p) => {
+    const qtd = Number(p.estoque) || 0;
+    if (qtd <= 0) return s;
+    const venda = Number(p.preco_venda) || 0;
+    const custo = Number(p.preco_custo) || 0;
+    return s + Math.round((venda - custo) * qtd * 100) / 100;
+  }, 0);
+}
+
+function renderVendasRelatorio(vendas, despesas, produtos) {
   const total = vendas.reduce((s, v) => s + Number(v.total), 0);
   const lucro = vendas.reduce((s, v) => s + Number(v.lucro), 0);
+  const totalDespesas = (despesas || []).reduce((s, d) => s + Number(d.valor), 0);
+  const lucroPresumido = lucroPresumidoEstoque(produtos);
 
   return `
-    <div class="cards-grid" style="margin-bottom:16px">
-      <div class="card">
+    <div class="cards-grid cards-consulta" style="margin-bottom:16px">
+      <div class="card card-qtde">
         <span class="card-rotulo">Vendas</span>
         <span class="card-valor">${vendas.length}</span>
       </div>
@@ -96,6 +113,14 @@ function renderVendasRelatorio(vendas) {
       <div class="card">
         <span class="card-rotulo">Lucro</span>
         <span class="card-valor lucro">${formatarMoeda(lucro)}</span>
+      </div>
+      <div class="card">
+        <span class="card-rotulo">Despesas</span>
+        <span class="card-valor gasto">${formatarMoeda(totalDespesas)}</span>
+      </div>
+      <div class="card">
+        <span class="card-rotulo">Lucro presumido (estoque)</span>
+        <span class="card-valor lucro">${formatarMoeda(lucroPresumido)}</span>
       </div>
     </div>
     <div class="table-wrapper">

@@ -7,8 +7,8 @@ async function carregarTelaClientes() {
   tela.innerHTML = `
     <div class="panel">
       <div class="panel-head">
-        <button class="btn primary" id="btn-novo-cliente">+ Novo cliente</button>
-        <input id="busca-clientes" type="search" placeholder="Buscar cliente..." />
+        <button class="btn primary" id="btn-novo-cliente">+ Novo Cliente</button>
+        <input id="busca-clientes" type="search" placeholder="Buscar Cliente..." />
       </div>
       <div class="table-wrapper">
         <table class="tabela">
@@ -183,7 +183,7 @@ function abrirFormCliente(id, aoSalvar) {
   modal.innerHTML = `
     <div class="modal-conteudo">
       <div class="modal-cabecalho">
-        <h2>${cliente ? 'Editar cliente' : 'Novo cliente'}</h2>
+        <h2>${cliente ? 'Editar Cliente' : 'Novo Cliente'}</h2>
         <button class="modal-fechar" type="button">×</button>
       </div>
       <form id="form-cliente">

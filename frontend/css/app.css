@@ -1355,62 +1355,6 @@ a.badge.zap-link {
   color: var(--texto-suave);
 }
 
-.sugestoes {
-  display: none;
-  margin-top: 10px;
-  border: 1px solid var(--borda-forte);
-  border-radius: 10px;
-  overflow: hidden;
-  background: var(--cartao);
-  box-shadow: var(--sombra);
-}
-
-.sugestao {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  width: 100%;
-  padding: 10px 14px;
-  border: none;
-  border-bottom: 1px solid var(--borda);
-  background: none;
-  cursor: pointer;
-  text-align: left;
-  font: inherit;
-  color: var(--texto);
-}
-
-.sugestao:last-child {
-  border-bottom: none;
-}
-
-.sugestao:hover {
-  background: var(--primaria-clara);
-}
-
-.sugestao em {
-  font-style: normal;
-  color: var(--texto-suave);
-  font-size: 13px;
-}
-
-.sugestao-info {
-  font-size: 12px;
-  color: var(--texto-suave);
-  white-space: nowrap;
-}
-
-.sugestao.vazia {
-  cursor: default;
-  color: var(--texto-suave);
-  justify-content: flex-start;
-}
-
-.sugestao.vazia:hover {
-  background: none;
-}
-
 .preview-movimento {
   display: flex;
   flex-wrap: wrap;
@@ -1470,24 +1414,65 @@ a.badge.zap-link {
   }
 }
 
+.linha-despesa {
+  display: grid;
+  grid-template-columns: minmax(260px, 1.8fr) minmax(150px, 1fr) 90px 130px;
+  gap: 12px;
+  align-items: end;
+}
+
+.linha-despesa > * {
+  min-width: 0;
+}
+
+.linha-despesa .field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.linha-despesa .field input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.linha-despesa .campo-valor input,
+.linha-despesa .campo-data input {
+  text-align: center;
+  padding: 12px 8px;
+}
+
+@media (max-width: 720px) {
+  .linha-despesa {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .linha-despesa .campo-descricao {
+    grid-column: 1 / -1;
+  }
+}
+
 .preview-item {
-  flex: 1 1 calc(33.33% - 8px);
-  min-width: 140px;
+  flex: 1 1 0;
+  min-width: 0;
   background: var(--cartao);
   border: 1px solid var(--borda);
   border-radius: 6px;
-  padding: 8px 10px;
-  font-size: 13px;
+  padding: 6px 8px;
+  font-size: 12px;
+  text-align: center;
 }
 
 .preview-item span {
   display: block;
   color: var(--texto-suave);
   margin-bottom: 4px;
+  font-size: 11px;
 }
 
 .preview-item strong {
-  font-size: 14px;
+  font-size: 13px;
 }
 
 /* ---- Clientes ---- */
@@ -1502,6 +1487,28 @@ a.badge.zap-link {
   border: 1.5px solid var(--borda-forte);
   flex: 1;
   max-width: none;
+}
+
+#tela-despesas .panel-head input {
+  border: 1.5px solid var(--borda-forte);
+  flex: 1;
+  max-width: none;
+}
+
+#tela-despesas .tabela th {
+  color: var(--texto);
+}
+
+#tela-despesas .tabela th:nth-child(1),
+#tela-despesas .tabela td:nth-child(1),
+#tela-despesas .tabela th:nth-child(4),
+#tela-despesas .tabela td:nth-child(4) {
+  text-align: center;
+}
+
+#tela-despesas .tabela th.acoes,
+#tela-despesas .tabela td.acoes {
+  text-align: center;
 }
 
 #tela-clientes .tabela th {
@@ -1639,6 +1646,25 @@ a.badge.zap-link {
 
 .card-valor.gasto {
   color: var(--erro);
+}
+
+.cards-grid.cards-consulta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+}
+
+.cards-grid.cards-consulta .card {
+  flex: 1 1 170px;
+}
+
+.cards-grid.cards-consulta .card.card-qtde {
+  flex: 0 1 96px;
+  justify-content: center;
+}
+
+.cards-grid.cards-consulta .card.card-qtde .card-valor {
+  font-size: 20px;
 }
 
 /* ---- Pagamento rápido (vendas) ---- */

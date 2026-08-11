@@ -8,18 +8,8 @@ async function carregarTelaEstoque() {
   tela.innerHTML = `
     <div class="panel">
       <div class="panel-head">
-        <button class="btn primary" id="btn-novo-movimento">+ Movimento</button>
-        <input id="busca-estoque" type="search" placeholder="Buscar produto..." autocomplete="off" />
-      </div>
-      <div class="sugestoes" id="sugestoes-estoque"></div>
-    </div>
-
-    <div class="panel">
-      <div class="panel-head">
-        <h2>Movimentos</h2>
-        <select id="filtro-movimentos" style="width:auto;min-width:160px">
-          <option value="">Todos os produtos</option>
-        </select>
+        <button class="btn primary" id="btn-novo-movimento">+ Nova Entrada</button>
+        <input id="busca-estoque" type="search" placeholder="Buscar Entradas..." autocomplete="off" />
       </div>
       <div class="table-wrapper">
         <table class="tabela">
@@ -41,59 +31,16 @@ async function carregarTelaEstoque() {
     </div>
   `;
 
-  const busca = tela.querySelector('#busca-estoque');
-  const sugestoes = tela.querySelector('#sugestoes-estoque');
-
-  const renderSugestoes = () => {
-    const termo = busca.value.trim().toLowerCase();
-    const lista = termo
-      ? produtosEstoque.filter(
-          (p) =>
-            (p.nome || '').toLowerCase().includes(termo) ||
-            (p.marca || '').toLowerCase().includes(termo) ||
-            (p.tipo || '').toLowerCase().includes(termo)
-        )
-      : produtosEstoque;
-
-    sugestoes.innerHTML = lista.length
-      ? lista
-          .map(
-            (p) => `
-              <button type="button" class="sugestao" data-id="${p.id}">
-                <span><strong>${p.nome}</strong>${p.marca ? ` <em>· ${p.marca}</em>` : ''}</span>
-                <span class="sugestao-info">estoque: ${Number(p.estoque) || 0} · custo: ${formatarMoeda(p.preco_custo)}</span>
-              </button>
-            `
-          )
-          .join('')
-      : `<div class="sugestao vazia">Nenhum produto encontrado.</div>`;
-    sugestoes.style.display = 'block';
-  };
-
-  busca.addEventListener('input', renderSugestoes);
-  busca.addEventListener('focus', renderSugestoes);
-  busca.addEventListener('blur', () => setTimeout(() => (sugestoes.style.display = 'none'), 150));
-  sugestoes.addEventListener('click', (e) => {
-    const item = e.target.closest('.sugestao');
-    if (!item || item.classList.contains('vazia')) return;
-    abrirFormMovimento(Number(item.dataset.id));
-    busca.value = '';
-    sugestoes.style.display = 'none';
-  });
+  document.getElementById('busca-estoque').addEventListener('input', (e) => renderMovimentos(e.target.value));
   tela.querySelector('#btn-novo-movimento').addEventListener('click', () => abrirFormMovimento());
-  tela.querySelector('#filtro-movimentos').addEventListener('change', (e) => carregarMovimentos(e.target.value));
 
   try {
     produtosEstoque = await requisicaoJSON(`${API()}/produtos`, 'GET', null, obterToken());
-    tela.querySelector('#filtro-movimentos').innerHTML =
-      `<option value="">Todos os produtos</option>` + produtosEstoque
-        .map((p) => `<option value="${p.id}">${p.nome}</option>`)
-        .join('');
   } catch (erro) {
     tratarErro(erro);
   }
 
-  await carregarMovimentos('');
+  await carregarMovimentos();
 }
 
 function badgeVariacao(variacao) {
@@ -141,7 +88,7 @@ function abrirFormMovimento(produtoId, movimentoId) {
   modal.innerHTML = `
     <div class="modal-conteudo">
       <div class="modal-cabecalho">
-        <h2>${editando ? 'Editar movimento' : 'Novo movimento'}</h2>
+        <h2>${editando ? 'Editar Movimento' : 'Novo Movimento'}</h2>
         <button class="modal-fechar" type="button">×</button>
       </div>
       <form id="form-movimento">
@@ -266,25 +213,28 @@ function abrirFormMovimento(produtoId, movimentoId) {
   });
 }
 
-async function carregarMovimentos(produtoId) {
+async function carregarMovimentos() {
   try {
-    const params = new URLSearchParams();
-    if (produtoId) params.set('produto_id', produtoId);
-    movimentosAtuais = await requisicaoJSON(`${API()}/estoque/movimentos?${params}`, 'GET', null, obterToken());
-    renderMovimentos();
+    movimentosAtuais = await requisicaoJSON(`${API()}/estoque/movimentos`, 'GET', null, obterToken());
+    renderMovimentos('');
   } catch (erro) {
     tratarErro(erro);
   }
 }
 
-function renderMovimentos() {
+function renderMovimentos(texto) {
   const corpo = document.getElementById('corpo-movimentos');
-  if (!movimentosAtuais.length) {
-    corpo.innerHTML = `<tr><td colspan="8" class="vazio">Nenhum movimento registrado.</td></tr>`;
+  const termo = (texto || '').trim().toLowerCase();
+  const lista = termo
+    ? movimentosAtuais.filter((m) => (m.produto_nome || '').toLowerCase().includes(termo))
+    : movimentosAtuais;
+
+  if (!lista.length) {
+    corpo.innerHTML = `<tr><td colspan="8" class="vazio">${movimentosAtuais.length ? 'Nenhum movimento encontrado.' : 'Nenhum movimento registrado.'}</td></tr>`;
     return;
   }
 
-  corpo.innerHTML = movimentosAtuais
+  corpo.innerHTML = lista
     .map((m) => {
       const entrada = m.tipo === 'entrada';
       const custoAntigo = m.custo_antigo;

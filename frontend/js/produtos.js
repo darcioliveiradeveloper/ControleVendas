@@ -16,8 +16,8 @@ async function carregarTelaProdutos() {
   tela.innerHTML = `
     <div class="panel">
       <div class="panel-head">
-        <button class="btn primary" id="btn-novo-produto">+ Novo produto</button>
-        <input id="busca-produtos" type="search" placeholder="Buscar produto..." />
+        <button class="btn primary" id="btn-novo-produto">+ Novo Produto</button>
+        <input id="busca-produtos" type="search" placeholder="Buscar Produto..." />
       </div>
       <div id="lista-produtos" class="produtos-grid"></div>
     </div>
@@ -124,7 +124,7 @@ function abrirFormProduto(id) {
   modal.innerHTML = `
     <div class="modal-conteudo">
       <div class="modal-cabecalho">
-        <h2>${produto ? 'Editar produto' : 'Novo produto'}</h2>
+        <h2>${produto ? 'Editar Produto' : 'Novo Produto'}</h2>
         <button class="modal-fechar" type="button">×</button>
       </div>
       <form id="form-produto">
@@ -142,7 +142,7 @@ function abrirFormProduto(id) {
           <div class="produto-info">
             <div class="field campo-nome">
               <label>Nome *</label>
-              <input name="nome" type="text" required placeholder="Ex.: Body brilho" value="${produto ? (produto.nome || '') : ''}" />
+              <input name="nome" type="text" required placeholder="Ex.: Body Brilho" value="${produto ? (produto.nome || '') : ''}" />
             </div>
             <div class="field campo-marca">
               <label>Marca</label>
@@ -162,7 +162,7 @@ function abrirFormProduto(id) {
             </div>
             <div class="field campo-observacoes">
               <label>Observações</label>
-              <textarea name="observacoes" rows="2" placeholder="Ex.: vendido em kit, validade, fornecedor...">${produto ? (produto.observacoes || '') : ''}</textarea>
+              <textarea name="observacoes" rows="2" placeholder="Ex.: Vendido em kit, Validade, Fornecedor...">${produto ? (produto.observacoes || '') : ''}</textarea>
             </div>
           </div>
           <input id="input-foto-camera" type="file" accept="image/*" capture="environment" class="foto-input-escondido" />

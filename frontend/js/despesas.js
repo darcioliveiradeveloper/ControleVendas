@@ -7,11 +7,8 @@ async function carregarTelaDespesas() {
   tela.innerHTML = `
     <div class="panel">
       <div class="panel-head">
-        <h2>Despesas</h2>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-          <input id="busca-despesas" type="search" placeholder="Buscar despesa..." />
-          <button class="btn primary" id="btn-nova-despesa">+ Nova despesa</button>
-        </div>
+        <button class="btn primary" id="btn-nova-despesa">+ Nova Despesa</button>
+        <input id="busca-despesas" type="search" placeholder="Buscar Despesa..." />
       </div>
       <div class="table-wrapper">
         <table class="tabela">
@@ -69,8 +66,16 @@ function renderDespesas() {
             <td>${d.categoria || '—'}</td>
             <td>${formatarMoeda(d.valor)}</td>
             <td class="acoes">
-              <button class="btn small secondary" onclick="abrirFormDespesa(${d.id})">Editar</button>
-              <button class="btn small" style="background:#fee2e2;color:var(--erro)" onclick="excluirDespesa(${d.id})">Excluir</button>
+              <button class="btn icone" title="Editar despesa" onclick="abrirFormDespesa(${d.id})">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/>
+                </svg>
+              </button>
+              <button class="btn icone excluir" title="Excluir despesa" onclick="excluirDespesa(${d.id})">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M10 11v6"/><path d="M14 11v6"/>
+                </svg>
+              </button>
             </td>
           </tr>
         `
@@ -83,6 +88,30 @@ function renderDespesas() {
   `;
 }
 
+function despesaParaInput(valor) {
+  const n = Number(valor);
+  if (!isFinite(n) || n <= 0) return '';
+  return n.toFixed(2).replace('.', ',');
+}
+
+function despesaValorDoInput(input) {
+  const t = String(input.value || '').replace(/[^\d,]/g, '');
+  if (!t) return null;
+  return Number(t.replace(/\./g, '').replace(',', '.'));
+}
+
+function despesaAplicarMascara(input) {
+  input.addEventListener('input', () => {
+    const digitos = String(input.value).replace(/\D/g, '').slice(0, 8);
+    if (!digitos) {
+      input.value = '';
+      return;
+    }
+    const formatado = (Number(digitos) / 100).toFixed(2).replace('.', ',');
+    if (input.value !== formatado) input.value = formatado;
+  });
+}
+
 function abrirFormDespesa(id) {
   const despesa = id ? despesasAtuais.find((d) => d.id === id) : null;
 
@@ -91,24 +120,24 @@ function abrirFormDespesa(id) {
   modal.innerHTML = `
     <div class="modal-conteudo">
       <div class="modal-cabecalho">
-        <h2>${despesa ? 'Editar despesa' : 'Nova despesa'}</h2>
+        <h2>${despesa ? 'Editar Despesa' : 'Nova Despesa'}</h2>
         <button class="modal-fechar" type="button">×</button>
       </div>
       <form id="form-despesa">
-        <div class="form-grid">
-          <div class="field">
+        <div class="linha-despesa">
+          <div class="field campo-descricao">
             <label>Descrição *</label>
             <input name="descricao" type="text" required value="${despesa ? (despesa.descricao || '') : ''}" />
           </div>
-          <div class="field">
+          <div class="field campo-categoria">
             <label>Categoria</label>
-            <input name="categoria" type="text" placeholder="Ex.: aluguel, energia, produtos" value="${despesa ? (despesa.categoria || '') : ''}" />
+            <input name="categoria" type="text" placeholder="Ex.: Aluguel, Energia, Produtos" value="${despesa ? (despesa.categoria || '') : ''}" />
           </div>
-          <div class="field">
+          <div class="field campo-valor">
             <label>Valor *</label>
-            <input name="valor" type="number" step="0.01" min="0.01" required value="${despesa ? despesa.valor : ''}" />
+            <input name="valor" type="text" inputmode="decimal" maxlength="9" required placeholder="0,00" value="${despesa ? despesaParaInput(despesa.valor) : ''}" />
           </div>
-          <div class="field">
+          <div class="field campo-data">
             <label>Data</label>
             <input name="data" type="date" value="${despesa ? (despesa.data || '') : (new Date().toISOString().slice(0, 10))}" />
           </div>
@@ -125,6 +154,7 @@ function abrirFormDespesa(id) {
   const fechar = () => modal.remove();
   modal.querySelector('.modal-fechar').addEventListener('click', fechar);
   modal.querySelector('.modal-cancelar').addEventListener('click', fechar);
+  despesaAplicarMascara(modal.querySelector('input[name="valor"]'));
   modal.addEventListener('click', (e) => {
     if (e.target === modal) fechar();
   });
@@ -135,7 +165,7 @@ function abrirFormDespesa(id) {
     const corpo = {
       descricao: f.descricao.value,
       categoria: f.categoria.value || null,
-      valor: Number(f.valor.value),
+      valor: despesaValorDoInput(f.valor),
       data: f.data.value || undefined,
     };
     try {

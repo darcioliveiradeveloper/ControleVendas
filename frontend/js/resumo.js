@@ -102,7 +102,7 @@ async function carregarTelaResumo() {
         <div class="panel-head">
           <h2>Vendas (consulta)</h2>
           <div class="filtros" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-            <input id="busca-venda" type="search" placeholder="Buscar por cliente..." />
+            <input id="busca-venda" type="search" placeholder="Buscar por Cliente..." />
             <select id="filtro-tipo-venda">
               <option value="">Todas</option>
               <option value="venda">Vendas</option>
