@@ -5,8 +5,6 @@ async function carregarTelaResumo() {
   tela.innerHTML = `<div class="vazio">Carregando resumo...</div>`;
 
   try {
-    const dados = await requisicaoJSON(`${API()}/relatorios/resumo`, 'GET', null, obterToken());
-
     const hoje = new Date();
     const primeiroDia = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-01`;
     const ultimoDia = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${new Date(
@@ -16,20 +14,21 @@ async function carregarTelaResumo() {
     ).getDate()}`;
 
     const periodoSql = `?inicio=${primeiroDia}&fim=${ultimoDia}`;
-    const doMes = await requisicaoJSON(`${API()}/relatorios/resumo${periodoSql}`, 'GET', null, obterToken());
-
-    const topProdutos = doMes.top_produtos || [];
-    const topClientes = doMes.top_clientes || [];
+    const [dados, doMes, produtos] = await Promise.all([
+      requisicaoJSON(`${API()}/relatorios/resumo`, 'GET', null, obterToken()),
+      requisicaoJSON(`${API()}/relatorios/resumo${periodoSql}`, 'GET', null, obterToken()),
+      requisicaoJSON(`${API()}/produtos`, 'GET', null, obterToken()),
+    ]);
 
     const lucroLiquido = Number(doMes.lucro_liquido) || 0;
 
-    const renderTopProdutos = () =>
-      topProdutos.length
+    const renderTopProdutos = (lista, vazio) =>
+      lista.length
         ? `<div class="table-wrapper">
              <table class="tabela">
                <thead><tr><th>Produto</th><th>Qtd.</th><th>Total</th></tr></thead>
                <tbody>
-                 ${topProdutos
+                 ${lista
                    .map(
                      (p) => `<tr><td>${p.nome}</td><td>${p.quantidade}</td><td>${formatarMoeda(p.total)}</td></tr>`
                    )
@@ -37,15 +36,15 @@ async function carregarTelaResumo() {
                </tbody>
              </table>
            </div>`
-        : `<div class="vazio">Sem vendas no mês ainda.</div>`;
+        : `<div class="vazio">${vazio}</div>`;
 
-    const renderTopClientes = () =>
-      topClientes.length
+    const renderTopClientes = (lista, vazio) =>
+      lista.length
         ? `<div class="table-wrapper">
              <table class="tabela">
                <thead><tr><th>Cliente</th><th>Vendas</th><th>Total</th></tr></thead>
                <tbody>
-                 ${topClientes
+                 ${lista
                    .map(
                      (c) => `<tr><td>${c.nome}</td><td>${c.vendas}</td><td>${formatarMoeda(c.total)}</td></tr>`
                    )
@@ -53,67 +52,72 @@ async function carregarTelaResumo() {
                </tbody>
              </table>
            </div>`
-        : `<div class="vazio">Sem clientes no mês ainda.</div>`;
+        : `<div class="vazio">${vazio}</div>`;
+
+    const card = (rotulo, valor, classe = '', compacto = false) => `
+      <div class="card ${compacto ? 'card-qtde' : ''}">
+        <span class="card-rotulo">${rotulo}</span>
+        <span class="card-valor ${classe}">${valor}</span>
+      </div>
+    `;
+
+    const secao = (titulo, cardsHtml, classe = '') => `
+      <div class="resumo-secao ${classe}">
+        <h3 class="section-titulo">${titulo}</h3>
+        <div class="cards-grid">${cardsHtml}</div>
+      </div>
+    `;
+
+    const lucroPresumido = (produtos || []).reduce((s, p) => {
+      const qtd = Number(p.estoque) || 0;
+      if (qtd <= 0) return s;
+      return s + Math.round(((Number(p.preco_venda) || 0) - (Number(p.preco_custo) || 0)) * qtd * 100) / 100;
+    }, 0);
+
+    const lucroLiquidoGeral = Number(dados.lucro_liquido) || 0;
 
     tela.innerHTML = `
-      <div class="cards-grid">
-        <div class="card">
-          <span class="card-rotulo">Vendas no mês</span>
-          <span class="card-valor">${doMes.vendas.quantidade}</span>
-        </div>
-        <div class="card">
-          <span class="card-rotulo">Faturamento no mês</span>
-          <span class="card-valor">${formatarMoeda(doMes.vendas.receita)}</span>
-        </div>
-        <div class="card">
-          <span class="card-rotulo">Lucro no mês</span>
-          <span class="card-valor lucro">${formatarMoeda(doMes.vendas.lucro)}</span>
-        </div>
-        <div class="card">
-          <span class="card-rotulo">Despesas no mês</span>
-          <span class="card-valor gasto">${formatarMoeda(doMes.despesas.total)}</span>
-        </div>
-        <div class="card">
-          <span class="card-rotulo">Lucro líquido no mês</span>
-          <span class="card-valor ${lucroLiquido >= 0 ? 'lucro' : 'gasto'}">${formatarMoeda(lucroLiquido)}</span>
-        </div>
-        <div class="card">
-          <span class="card-rotulo">Encomendas abertas</span>
-          <span class="card-valor">${dados.encomendas_abertas}</span>
-        </div>
-        <div class="card">
-          <span class="card-rotulo">A receber (parcelas)</span>
-          <span class="card-valor">${formatarMoeda(dados.parcelas_abertas.valor)}</span>
-        </div>
-        <div class="card">
-          <span class="card-rotulo">Parcelas vencidas</span>
-          <span class="card-valor">${dados.parcelas_vencidas.quantidade}</span>
-        </div>
-        <div class="card">
-          <span class="card-rotulo">Clientes</span>
-          <span class="card-valor">${dados.clientes}</span>
-        </div>
-        <div class="card">
-          <span class="card-rotulo">Produtos</span>
-          <span class="card-valor">${dados.produtos}</span>
-        </div>
-      </div>
+      ${secao('Mês Atual', [
+        card('Vendas', doMes.vendas.quantidade, '', true),
+        card('Faturamento', formatarMoeda(doMes.vendas.receita)),
+        card('Lucro', formatarMoeda(doMes.vendas.lucro), 'lucro'),
+        card('Despesas', formatarMoeda(doMes.despesas.total), 'gasto'),
+        card('Lucro Líquido', formatarMoeda(lucroLiquido), lucroLiquido >= 0 ? 'lucro' : 'gasto'),
+      ].join(''), 'secao-mes')}
+      ${secao('Desde o Início', [
+        card('Vendas', dados.vendas.quantidade, '', true),
+        card('Faturamento', formatarMoeda(dados.vendas.receita)),
+        card('Lucro', formatarMoeda(dados.vendas.lucro), 'lucro'),
+        card('Despesas', formatarMoeda(dados.despesas.total), 'gasto'),
+        card('Lucro Líquido', formatarMoeda(lucroLiquidoGeral), lucroLiquidoGeral >= 0 ? 'lucro' : 'gasto'),
+      ].join(''), 'secao-geral')}
+      ${secao('Estado Atual', [
+        card('Encomendas abertas', dados.encomendas_abertas),
+        card('A receber (parcelas)', formatarMoeda(dados.parcelas_abertas.valor)),
+        card('Parcelas vencidas', dados.parcelas_vencidas.quantidade),
+        card('Clientes', dados.clientes),
+        card('Produtos', dados.produtos),
+        card('Lucro presumido (estoque)', formatarMoeda(lucroPresumido), 'lucro'),
+      ].join(''), 'secao-estado')}
       <div class="panel">
-        <div class="panel-head">
+        <div class="panel-head" style="justify-content:flex-start">
           <h2>Vendas (consulta)</h2>
-          <div class="filtros" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-            <input id="busca-venda" type="search" placeholder="Buscar por Cliente..." />
-            <select id="filtro-tipo-venda">
-              <option value="">Todas</option>
-              <option value="venda">Vendas</option>
-              <option value="encomenda">Encomendas</option>
-            </select>
-            <select id="filtro-status-venda">
-              <option value="">Todos os status</option>
-              <option value="ativa">Ativa</option>
-              <option value="cancelada">Cancelada</option>
-            </select>
-          </div>
+          <input id="busca-venda" type="search" placeholder="Buscar por Cliente..." />
+          <select id="filtro-tipo-venda" style="width:auto">
+            <option value="">Todas</option>
+            <option value="venda">Vendas</option>
+            <option value="encomenda">Encomendas</option>
+          </select>
+          <select id="filtro-status-venda" style="width:auto">
+            <option value="">Todos os status</option>
+            <option value="ativa">Ativa</option>
+            <option value="cancelada">Cancelada</option>
+          </select>
+          <select id="filtro-pagamento-venda" style="width:auto">
+            <option value="">Todas</option>
+            <option value="quitada">Quitadas</option>
+            <option value="pendente">Pendentes</option>
+          </select>
         </div>
         <div class="table-wrapper">
           <table class="tabela">
@@ -135,12 +139,20 @@ async function carregarTelaResumo() {
       </div>
       <div class="resumo-top">
         <div class="panel">
-          <h2>Produtos mais vendidos do mês</h2>
-          ${renderTopProdutos()}
+          <h2>Produtos Mais Vendidos (Desde o Início)</h2>
+          ${renderTopProdutos(dados.top_produtos || [], 'Sem vendas ainda.')}
         </div>
         <div class="panel">
-          <h2>Top clientes do mês</h2>
-          ${renderTopClientes()}
+          <h2>Produtos Mais Vendidos (Mês)</h2>
+          ${renderTopProdutos(doMes.top_produtos || [], 'Sem vendas no mês ainda.')}
+        </div>
+        <div class="panel">
+          <h2>Top Clientes (Desde o Início)</h2>
+          ${renderTopClientes(dados.top_clientes || [], 'Sem clientes ainda.')}
+        </div>
+        <div class="panel">
+          <h2>Top Clientes (Mês)</h2>
+          ${renderTopClientes(doMes.top_clientes || [], 'Sem clientes no mês ainda.')}
         </div>
       </div>
       <div class="vazio">Use o menu lateral para acessar as telas.</div>
@@ -152,6 +164,7 @@ async function carregarTelaResumo() {
     });
     tela.querySelector('#filtro-tipo-venda').addEventListener('change', () => carregarVendas());
     tela.querySelector('#filtro-status-venda').addEventListener('change', () => carregarVendas());
+    tela.querySelector('#filtro-pagamento-venda').addEventListener('change', () => carregarVendas());
     carregarVendas();
   } catch (erro) {
     tratarErro(erro);
@@ -182,12 +195,21 @@ async function carregarVendas(busca) {
 
 function renderVendas() {
   const corpo = document.getElementById('corpo-vendas');
-  if (!vendasAtuais.length) {
-    corpo.innerHTML = `<tr><td colspan="8" class="vazio">Nenhuma venda encontrada.</td></tr>`;
+  const pagamento = document.getElementById('filtro-pagamento-venda').value;
+  let lista = vendasAtuais;
+  if (pagamento) {
+    lista = lista.filter((v) => {
+      if (v.status === 'cancelada' || v.tipo !== 'venda') return false;
+      const quitada = v.parcelas_pagas === v.total_parcelas;
+      return pagamento === 'quitada' ? quitada : !quitada;
+    });
+  }
+  if (!lista.length) {
+    corpo.innerHTML = `<tr><td colspan="8" class="vazio">${vendasAtuais.length ? 'Nenhuma venda encontrada.' : 'Nenhuma venda encontrada.'}</td></tr>`;
     return;
   }
 
-  corpo.innerHTML = vendasAtuais
+  corpo.innerHTML = lista
     .map((v) => {
       const statusBadge =
         v.status === 'cancelada'
@@ -208,7 +230,11 @@ function renderVendas() {
           <td><strong>${formatarMoeda(v.total)}</strong></td>
           <td>${statusBadge}</td>
           <td class="acoes">
-            <button class="btn small secondary" onclick="abrirDetalheVenda(${v.id})">Detalhes</button>
+            <button class="btn icone" title="Ver detalhes" onclick="abrirDetalheVenda(${v.id})">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+              </svg>
+            </button>
           </td>
         </tr>
       `;
@@ -228,7 +254,7 @@ async function abrirDetalheVenda(id) {
 function renderDetalheVenda() {
   const v = vendaDetalheAtual;
   const modal = document.createElement('div');
-  modal.className = 'modal';
+  modal.className = 'modal modal-detalhe-venda';
   modal.innerHTML = `
     <div class="modal-conteudo">
       <div class="modal-cabecalho">
@@ -237,11 +263,11 @@ function renderDetalheVenda() {
       </div>
 
       <div class="detalhe-cabecalho">
-        <div><div class="rotulo">Data</div><div class="valor">${formatarData(v.criado_em)}</div></div>
-        <div><div class="rotulo">Cliente</div><div class="valor">${v.cliente_nome || 'Avulso'}</div></div>
-        <div><div class="rotulo">Tipo</div><div class="valor">${v.tipo === 'encomenda' ? 'Encomenda' : 'Venda'}</div></div>
-        <div><div class="rotulo">Pagamento</div><div class="valor">${NOME_PAGAMENTO[v.forma_pagamento] || 'À vista'}</div></div>
-        <div><div class="rotulo">Status</div><div class="valor">${v.status === 'cancelada' ? 'Cancelada' : v.quitada ? 'Quitada' : 'Ativa'}</div></div>
+        <div class="item-data"><div class="rotulo">Data</div><div class="valor">${formatarData(v.criado_em)}</div></div>
+        <div class="item-cliente"><div class="rotulo">Cliente</div><div class="valor">${v.cliente_nome || 'Avulso'}</div></div>
+        <div class="item-venda"><div class="rotulo">Tipo</div><div class="valor">${v.tipo === 'encomenda' ? 'Encomenda' : 'Venda'}</div></div>
+        <div class="item-pagamento"><div class="rotulo">Pagamento</div><div class="valor">${NOME_PAGAMENTO[v.forma_pagamento] || 'À vista'}</div></div>
+        <div class="item-status"><div class="rotulo">Status</div><div class="valor">${v.status === 'cancelada' ? 'Cancelada' : v.quitada ? 'Quitada' : 'Ativa'}</div></div>
       </div>
 
       <h3>Itens</h3>

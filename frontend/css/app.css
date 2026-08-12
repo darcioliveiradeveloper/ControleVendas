@@ -1234,6 +1234,41 @@ a.badge.zap-link {
   margin-top: 2px;
 }
 
+.modal-detalhe-venda .detalhe-cabecalho {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  padding: 12px 14px;
+  font-size: 14px;
+}
+
+.modal-detalhe-venda .detalhe-cabecalho .rotulo {
+  color: var(--texto);
+  font-size: 12px;
+}
+
+.modal-detalhe-venda .detalhe-cabecalho .valor {
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.modal-detalhe-venda .tabela th {
+  color: var(--texto);
+}
+
+.modal-detalhe-venda .detalhe-cabecalho .item-cliente {
+  margin-left: 20px;
+}
+
+.modal-detalhe-venda .detalhe-cabecalho .item-venda {
+  margin-left: auto;
+}
+
+.modal-detalhe-venda .detalhe-cabecalho .item-pagamento,
+.modal-detalhe-venda .detalhe-cabecalho .item-status {
+  margin-left: 28px;
+}
+
 .modal h3 {
   font-size: 14px;
   font-weight: 800;
@@ -1495,6 +1530,12 @@ a.badge.zap-link {
   max-width: none;
 }
 
+#tela-resumo .panel-head input {
+  border: 1.5px solid var(--borda-forte);
+  flex: 1;
+  max-width: none;
+}
+
 #tela-despesas .tabela th {
   color: var(--texto);
 }
@@ -1508,6 +1549,17 @@ a.badge.zap-link {
 
 #tela-despesas .tabela th.acoes,
 #tela-despesas .tabela td.acoes {
+  text-align: center;
+}
+
+#tela-resumo .tabela th {
+  color: var(--texto);
+}
+
+#tela-resumo .tabela th:nth-child(2),
+#tela-resumo .tabela td:nth-child(2),
+#tela-resumo .tabela th.acoes,
+#tela-resumo .tabela td.acoes {
   text-align: center;
 }
 
@@ -1606,17 +1658,17 @@ a.badge.zap-link {
 .cards-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-  gap: 16px;
+  gap: 12px;
 }
 
 .card {
   background: var(--cartao);
   border: 1px solid var(--borda);
   border-radius: 14px;
-  padding: 18px;
+  padding: 10px 14px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
   box-shadow: var(--sombra);
   transition: transform 0.2s, box-shadow 0.2s;
 }
@@ -1635,7 +1687,7 @@ a.badge.zap-link {
 }
 
 .card-valor {
-  font-size: 25px;
+  font-size: 21px;
   font-weight: 800;
   color: var(--texto);
 }
@@ -1660,11 +1712,70 @@ a.badge.zap-link {
 
 .cards-grid.cards-consulta .card.card-qtde {
   flex: 0 1 96px;
+}
+
+.card.card-qtde {
   justify-content: center;
 }
 
-.cards-grid.cards-consulta .card.card-qtde .card-valor {
+.card.card-qtde .card-valor {
   font-size: 20px;
+}
+
+.resumo-secao {
+  margin-bottom: 10px;
+}
+
+#tela-resumo .resumo-secao {
+  margin-bottom: 6px;
+}
+
+#tela-resumo .section-titulo {
+  margin: 0 0 4px;
+  font-size: 11px;
+}
+
+#tela-resumo .card {
+  padding: 8px 12px;
+  gap: 2px;
+}
+
+#tela-resumo .card .card-rotulo {
+  font-size: 14px;
+}
+
+#tela-resumo .card .card-valor {
+  font-size: 12px;
+  font-weight: 400;
+}
+
+#tela-resumo .secao-mes .cards-grid,
+#tela-resumo .secao-geral .cards-grid {
+  grid-template-columns: repeat(5, 1fr);
+}
+
+#tela-resumo .secao-estado .cards-grid {
+  grid-template-columns: repeat(6, 1fr);
+}
+
+@media (max-width: 1200px) {
+  #tela-resumo .secao-mes .cards-grid,
+  #tela-resumo .secao-geral .cards-grid {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  }
+
+  #tela-resumo .secao-estado .cards-grid {
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  }
+}
+
+.section-titulo {
+  margin: 0 0 6px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--texto-suave);
+  font-weight: 700;
 }
 
 /* ---- Pagamento rápido (vendas) ---- */
@@ -1721,6 +1832,24 @@ a.badge.zap-link {
   grid-template-columns: 1fr 1fr;
   gap: 16px;
   margin-top: 16px;
+}
+
+.resumo-top > * {
+  min-width: 0;
+}
+
+.resumo-top .tabela {
+  min-width: 0;
+}
+
+.resumo-top .tabela th,
+.resumo-top .tabela td {
+  padding: 8px 10px;
+}
+
+.resumo-top .tabela td:first-child {
+  white-space: normal;
+  word-break: break-word;
 }
 
 /* ---- Despesas: linha de total ---- */
