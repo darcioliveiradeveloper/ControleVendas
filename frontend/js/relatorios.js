@@ -6,27 +6,17 @@ async function carregarTelaRelatorios() {
   const tela = document.getElementById('tela-relatorios');
   tela.innerHTML = `
     <div class="panel">
-      <div class="panel-head" style="justify-content:flex-start">
-        <div class="filtros-tipo" style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-          <button class="btn small secondary" data-tipo="vendas">Vendas</button>
-          <button class="btn small secondary" data-tipo="gastos">Gastos (estoque)</button>
-          <button class="btn small secondary" data-tipo="parcelas">Parcelas</button>
-          <button class="btn small secondary" data-tipo="despesas">Despesas</button>
-        </div>
-        <div class="filtro-periodo" style="align-items:flex-start">
-          <div class="field">
-            <label>De</label>
-            <input id="rel-inicio" type="date" />
-          </div>
-          <div class="field">
-            <label>Até</label>
-            <input id="rel-fim" type="date" />
-          </div>
-          <div style="display:flex;flex-direction:column;gap:8px">
-            <button class="btn primary" id="btn-aplicar-filtro">Aplicar</button>
-            <button class="btn secondary" id="btn-limpar-filtro">Limpar</button>
-          </div>
-        </div>
+      <div class="panel-head" style="justify-content:flex-start;gap:8px;flex-wrap:nowrap">
+        <label style="margin-bottom:2px">De</label>
+        <input id="rel-inicio" type="date" style="width:135px" />
+        <label style="margin-bottom:2px">Até</label>
+        <input id="rel-fim" type="date" style="width:135px" />
+        <button class="btn small secondary" data-tipo="vendas">Vendas</button>
+        <button class="btn small secondary" data-tipo="gastos">Gastos</button>
+        <button class="btn small secondary" data-tipo="parcelas">Parcelas</button>
+        <button class="btn small secondary" data-tipo="despesas">Despesas</button>
+        <button class="btn small primary" id="btn-aplicar-filtro">Aplicar</button>
+        <button class="btn small secondary" id="btn-limpar-filtro">Limpar</button>
       </div>
       <div id="conteudo-relatorio" style="margin-top:16px"></div>
     </div>
@@ -39,7 +29,10 @@ async function carregarTelaRelatorios() {
     carregarRelatorio();
   });
   tela.querySelectorAll('[data-tipo]').forEach((b) => {
+    if (b.dataset.tipo === relatorioTipo) b.classList.add('ativo');
     b.addEventListener('click', () => {
+      tela.querySelectorAll('[data-tipo]').forEach((x) => x.classList.remove('ativo'));
+      b.classList.add('ativo');
       relatorioTipo = b.dataset.tipo;
       carregarRelatorio();
     });

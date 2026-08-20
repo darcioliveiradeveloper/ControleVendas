@@ -635,6 +635,12 @@ input[readonly] {
   background: var(--fundo);
 }
 
+.btn.secondary.ativo {
+  background: var(--primaria);
+  color: #fff;
+  border-color: var(--primaria);
+}
+
 .btn.small {
   padding: 8px 12px;
   font-size: 13px;
@@ -1547,6 +1553,10 @@ a.badge.zap-link {
   text-align: center;
 }
 
+#tela-estoque .tabela td.acoes {
+  text-align: center;
+}
+
 #tela-despesas .tabela th.acoes,
 #tela-despesas .tabela td.acoes {
   text-align: center;
@@ -1726,18 +1736,39 @@ a.badge.zap-link {
   margin-bottom: 10px;
 }
 
-#tela-resumo .resumo-secao {
-  margin-bottom: 6px;
+#tela-resumo .resumo-indicadores {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
 
-#tela-resumo .section-titulo {
-  margin: 0 0 4px;
-  font-size: 11px;
+#tela-resumo .resumo-cards {
+  gap: 4px;
+}
+
+#tela-resumo .resumo-titulo-secao {
+  font-size: 10px;
+  margin: 0;
+  padding: 2px 0 1px;
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--texto-suave);
+  font-weight: 700;
+}
+
+#tela-resumo .resumo-indicadores .cards-grid {
+  grid-template-columns: repeat(5, 1fr);
+}
+
+#tela-resumo .resumo-indicadores .resumo-cards:last-of-type {
+  grid-template-columns: repeat(6, 1fr);
 }
 
 #tela-resumo .card {
-  padding: 8px 12px;
-  gap: 2px;
+  padding: 6px 10px;
+  gap: 1px;
+  border-radius: 10px;
 }
 
 #tela-resumo .card .card-rotulo {
@@ -1747,25 +1778,12 @@ a.badge.zap-link {
 #tela-resumo .card .card-valor {
   font-size: 12px;
   font-weight: 400;
-}
-
-#tela-resumo .secao-mes .cards-grid,
-#tela-resumo .secao-geral .cards-grid {
-  grid-template-columns: repeat(5, 1fr);
-}
-
-#tela-resumo .secao-estado .cards-grid {
-  grid-template-columns: repeat(6, 1fr);
+  line-height: 1.1;
 }
 
 @media (max-width: 1200px) {
-  #tela-resumo .secao-mes .cards-grid,
-  #tela-resumo .secao-geral .cards-grid {
+  #tela-resumo .resumo-indicadores .cards-grid {
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  }
-
-  #tela-resumo .secao-estado .cards-grid {
-    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
   }
 }
 

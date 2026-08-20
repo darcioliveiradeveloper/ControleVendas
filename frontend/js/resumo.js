@@ -61,8 +61,8 @@ async function carregarTelaResumo() {
       </div>
     `;
 
-    const secao = (titulo, cardsHtml, classe = '') => `
-      <div class="resumo-secao ${classe}">
+    const secao = (titulo, cardsHtml, classe = '', id = '') => `
+      <div class="resumo-secao ${classe}" ${id ? `id="${id}"` : ''}>
         <h3 class="section-titulo">${titulo}</h3>
         <div class="cards-grid">${cardsHtml}</div>
       </div>
@@ -77,28 +77,39 @@ async function carregarTelaResumo() {
     const lucroLiquidoGeral = Number(dados.lucro_liquido) || 0;
 
     tela.innerHTML = `
-      ${secao('Mês Atual', [
-        card('Vendas', doMes.vendas.quantidade, '', true),
-        card('Faturamento', formatarMoeda(doMes.vendas.receita)),
-        card('Lucro', formatarMoeda(doMes.vendas.lucro), 'lucro'),
-        card('Despesas', formatarMoeda(doMes.despesas.total), 'gasto'),
-        card('Lucro Líquido', formatarMoeda(lucroLiquido), lucroLiquido >= 0 ? 'lucro' : 'gasto'),
-      ].join(''), 'secao-mes')}
-      ${secao('Desde o Início', [
-        card('Vendas', dados.vendas.quantidade, '', true),
-        card('Faturamento', formatarMoeda(dados.vendas.receita)),
-        card('Lucro', formatarMoeda(dados.vendas.lucro), 'lucro'),
-        card('Despesas', formatarMoeda(dados.despesas.total), 'gasto'),
-        card('Lucro Líquido', formatarMoeda(lucroLiquidoGeral), lucroLiquidoGeral >= 0 ? 'lucro' : 'gasto'),
-      ].join(''), 'secao-geral')}
-      ${secao('Estado Atual', [
-        card('Encomendas abertas', dados.encomendas_abertas),
-        card('A receber (parcelas)', formatarMoeda(dados.parcelas_abertas.valor)),
-        card('Parcelas vencidas', dados.parcelas_vencidas.quantidade),
-        card('Clientes', dados.clientes),
-        card('Produtos', dados.produtos),
-        card('Lucro presumido (estoque)', formatarMoeda(lucroPresumido), 'lucro'),
-      ].join(''), 'secao-estado')}
+      <div class="resumo-indicadores">
+        <h3 class="section-titulo resumo-titulo-secao">Mês Atual</h3>
+        <div class="cards-grid resumo-cards">
+          ${[
+            card('Vendas', doMes.vendas.quantidade, '', true),
+            card('Faturamento', formatarMoeda(doMes.vendas.receita)),
+            card('Lucro', formatarMoeda(doMes.vendas.lucro), 'lucro'),
+            card('Despesas', formatarMoeda(doMes.despesas.total), 'gasto'),
+            card('Lucro Líquido', formatarMoeda(lucroLiquido), lucroLiquido >= 0 ? 'lucro' : 'gasto'),
+          ].join('')}
+        </div>
+        <h3 class="section-titulo resumo-titulo-secao">Desde o Início</h3>
+        <div class="cards-grid resumo-cards">
+          ${[
+            card('Vendas', dados.vendas.quantidade, '', true),
+            card('Faturamento', formatarMoeda(dados.vendas.receita)),
+            card('Lucro', formatarMoeda(dados.vendas.lucro), 'lucro'),
+            card('Despesas', formatarMoeda(dados.despesas.total), 'gasto'),
+            card('Lucro Líquido', formatarMoeda(lucroLiquidoGeral), lucroLiquidoGeral >= 0 ? 'lucro' : 'gasto'),
+          ].join('')}
+        </div>
+        <h3 class="section-titulo resumo-titulo-secao">Estado Atual</h3>
+        <div class="cards-grid resumo-cards" id="estado-atual">
+          ${[
+            card('Encomendas abertas', dados.encomendas_abertas),
+            card('A receber (parcelas)', formatarMoeda(dados.parcelas_abertas.valor)),
+            card('Parcelas vencidas', dados.parcelas_vencidas.quantidade),
+            card('Clientes', dados.clientes),
+            card('Produtos', dados.produtos),
+            card('Lucro presumido (estoque)', formatarMoeda(lucroPresumido), 'lucro'),
+          ].join('')}
+        </div>
+      </div>
       <div class="panel">
         <div class="panel-head" style="justify-content:flex-start">
           <h2>Vendas (consulta)</h2>
@@ -193,6 +204,39 @@ async function carregarVendas(busca) {
   }, 250);
 }
 
+async function atualizarEstadoAtual() {
+  try {
+    const hoje = new Date();
+    const periodoSql = `?inicio=${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-01&fim=${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0).getDate()}`;
+    const [dados, doMes, produtos] = await Promise.all([
+      requisicaoJSON(`${API()}/relatorios/resumo`, 'GET', null, obterToken()),
+      requisicaoJSON(`${API()}/relatorios/resumo${periodoSql}`, 'GET', null, obterToken()),
+      requisicaoJSON(`${API()}/produtos`, 'GET', null, obterToken()),
+    ]);
+    const container = document.getElementById('estado-atual');
+    if (!container) return;
+    const lucroPresumido = (produtos || []).reduce((s, p) => {
+      const qtd = Number(p.estoque) || 0;
+      if (qtd <= 0) return s;
+      return s + Math.round(((Number(p.preco_venda) || 0) - (Number(p.preco_custo) || 0)) * qtd * 100) / 100;
+    }, 0);
+    const cardHtml = (rotulo, valor, classe = '', compacto = false) => `
+      <div class="card ${compacto ? 'card-qtde' : ''}">
+        <span class="card-rotulo">${rotulo}</span>
+        <span class="card-valor ${classe}">${valor}</span>
+      </div>
+    `;
+    container.innerHTML = [
+      cardHtml('Encomendas abertas', dados.encomendas_abertas),
+      cardHtml('A receber (parcelas)', formatarMoeda(dados.parcelas_abertas.valor)),
+      cardHtml('Parcelas vencidas', dados.parcelas_vencidas.quantidade),
+      cardHtml('Clientes', dados.clientes),
+      cardHtml('Produtos', dados.produtos),
+      cardHtml('Lucro presumido (estoque)', formatarMoeda(lucroPresumido), 'lucro'),
+    ].join('');
+  } catch (_) {}
+}
+
 function renderVendas() {
   const corpo = document.getElementById('corpo-vendas');
   const pagamento = document.getElementById('filtro-pagamento-venda').value;
@@ -252,6 +296,7 @@ async function abrirDetalheVenda(id) {
 }
 
 function renderDetalheVenda() {
+  document.querySelectorAll('.modal.modal-detalhe-venda').forEach((m) => m.remove());
   const v = vendaDetalheAtual;
   const modal = document.createElement('div');
   modal.className = 'modal modal-detalhe-venda';
@@ -364,8 +409,9 @@ function renderDetalheVenda() {
   window.alternarParcela = async (parcelaId, pago) => {
     try {
       await requisicaoJSON(`${API()}/vendas/${v.id}/parcelas/${parcelaId}`, 'PUT', { pago }, obterToken());
-      await abrirDetalheVenda(v.id);
+      document.querySelectorAll('.modal.modal-detalhe-venda').forEach((m) => m.remove());
       await carregarVendas();
+      await atualizarEstadoAtual();
     } catch (erro) {
       alert(erro.message);
     }
@@ -375,8 +421,11 @@ function renderDetalheVenda() {
     if (!confirm('Confirmar esta encomenda? O estoque será baixado.')) return;
     try {
       await requisicaoJSON(`${API()}/vendas/${vendaId}/confirmar`, 'POST', {}, obterToken());
-      await abrirDetalheVenda(vendaId);
+      document.querySelectorAll('.modal.modal-detalhe-venda').forEach((m) => m.remove());
+      const selTipo = document.getElementById('filtro-tipo-venda');
+      if (selTipo) selTipo.value = '';
       await carregarVendas();
+      await atualizarEstadoAtual();
     } catch (erro) {
       alert(erro.message);
     }
@@ -386,8 +435,9 @@ function renderDetalheVenda() {
     if (!confirm('Cancelar esta venda? O estoque de vendas será devolvido.')) return;
     try {
       await requisicaoJSON(`${API()}/vendas/${vendaId}`, 'DELETE', null, obterToken());
-      await abrirDetalheVenda(vendaId);
+      document.querySelectorAll('.modal.modal-detalhe-venda').forEach((m) => m.remove());
       await carregarVendas();
+      await atualizarEstadoAtual();
     } catch (erro) {
       alert(erro.message);
     }
